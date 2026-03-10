@@ -15,51 +15,74 @@ router = APIRouter(prefix="/api/site", tags=["Site"])
 
 # ─── Dependencies ─────────────────────────────────────────────────────────────
 
+def clean_domain(url: str) -> str:
+    """Standardizes a domain by removing protocols, port numbers, and trailing slashes."""
+    if not url:
+        return ""
+    # Remove protocol
+    url = url.replace("https://", "").replace("http://", "")
+    # Remove port number if present (e.g., localhost:3000 -> localhost)
+    url = url.split(":")[0]
+    # Remove trailing slash
+    url = url.rstrip("/")
+    # Remove path from referers (e.g., site.com/path -> site.com)
+    url = url.split("/")[0]
+    return url.lower().strip()
+
 async def get_current_client(request: Request, db: Session = Depends(get_db)) -> Client:
-    """Identify the client based on explicit ID, Origin, or Host headers."""
+    """Robustly identify the client based on explicit ID, Origin, or Host headers."""
+    
     # 1. Check for explicit Client ID header (highest priority)
-    client_id = request.headers.get("x-client-id")
-    if client_id and client_id.isdigit():
-        client = db.query(Client).filter(Client.id == int(client_id), Client.is_active == True).first()
+    client_id_header = request.headers.get("x-client-id")
+    if client_id_header and client_id_header.isdigit():
+        client = db.query(Client).filter(Client.id == int(client_id_header), Client.is_active == True).first()
         if client:
+            print(f"DEBUG [IDENTIFY]: Matched client by X-Client-ID header: {client.name} (ID: {client.id})")
             return client
 
-    # 2. Prioritize Origin / Referer (essential for frontend SPAs on Vercel)
-    host = None
-    origin = request.headers.get("origin") or request.headers.get("referer", "")
-    if origin:
-        # Extract domain from https://domain.com/path
-        host = origin.replace("https://", "").replace("http://", "").split("/")[0].strip()
+    # 2. Extract potential host candidates from headers in order of priority
+    origin = request.headers.get("origin")
+    referer = request.headers.get("referer")
+    forwarded_host = request.headers.get("x-forwarded-host")
+    standard_host = request.headers.get("host")
 
-    # 3. Fallback to X-Forwarded-Host (Production/Proxy)
-    if not host:
-        host = request.headers.get("x-forwarded-host")
-            
-    # 4. Final Fallback to standard Host header
-    if not host:
-        host = request.headers.get("host", "").strip()
+    # Log incoming headers for easier Vercel debugging
+    print(f"DEBUG [HEADERS]: Origin='{origin}', Referer='{referer}', X-Fwd-Host='{forwarded_host}', Host='{standard_host}'")
 
-    # 2. Lookup Client in DB by domain matching
+    # Clean the candidates
+    cleaned_origin = clean_domain(origin)
+    cleaned_referer = clean_domain(referer)
+    cleaned_fwd_host = clean_domain(forwarded_host)
+    cleaned_std_host = clean_domain(standard_host)
+
+    # 3. Create a prioritized list of host candidates to check against DB
+    # We prefer Origin/Referer (frontend) over Forwarded-Host (which might be the backend domain)
+    candidates = [c for c in [cleaned_origin, cleaned_referer, cleaned_fwd_host, cleaned_std_host] if c]
+    print(f"DEBUG [CANDIDATES]: Ordered candidates to check: {candidates}")
+
     client = None
-    if host:
-        client = db.query(Client).filter(
-            Client.domain_name.ilike(f"%{host}%"),
-            Client.is_active == True
-        ).first()
+    tested_matches = []
 
-    # 3. GLOBAL FALLBACK (Crucial for testing/production direct visits)
-    # If no exact match found, just pick the FIRST active client.
-    # This prevents 404 errors when visiting the backend URL directly.
-    if not client:
-        client = db.query(Client).filter(Client.is_active == True).first()
+    # 4. Strict DB Lookup Logic
+    # We fetch ALL active clients and do a strict normalized comparison to avoid 'ilike %host%' collisions
+    all_active_clients = db.query(Client).filter(Client.is_active == True).all()
+    
+    for candidate in candidates:
+        for c in all_active_clients:
+            db_domain = clean_domain(c.domain_name)
+            if db_domain == candidate:
+                client = c
+                break
         if client:
-            print(f"INFO: No exact match for '{host or 'unknown'}'. Using default client: {client.name}")
+            print(f"DEBUG [MATCH]: Found exact match for candidate '{candidate}' -> Client: {client.name}")
+            break
 
+    # 5. NO FALLBACK (Strict matching only)
     if not client:
-        print(f"ERROR: No clients found in database at all.")
+        print(f"ERROR [IDENTIFY]: No client found matching candidates: {candidates}")
         raise HTTPException(
             status_code=404, 
-            detail="No clients registered. Please add a client in the Admin Panel first."
+            detail=f"This domain ({candidates[0] if candidates else 'unknown'}) is not registered with our platform. Please contact support or add it in the Admin Panel."
         )
     return client
 
