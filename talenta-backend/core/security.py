@@ -75,6 +75,14 @@ def set_auth_cookies(response, access_token: str, refresh_token: str):
 
 
 def clear_auth_cookies(response):
-    """Clear both auth cookies on logout."""
-    response.delete_cookie(ACCESS_COOKIE_NAME)
-    response.delete_cookie(REFRESH_COOKIE_NAME, path="/api/auth/refresh")
+    """Clear both auth cookies on logout by matching their attributes."""
+    cookie_kwargs = dict(
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite=settings.COOKIE_SAMESITE,
+    )
+    if settings.COOKIE_DOMAIN:
+        cookie_kwargs["domain"] = settings.COOKIE_DOMAIN
+
+    response.delete_cookie(ACCESS_COOKIE_NAME, **cookie_kwargs)
+    response.delete_cookie(REFRESH_COOKIE_NAME, path="/api/auth/refresh", **cookie_kwargs)
