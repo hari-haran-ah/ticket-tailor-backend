@@ -30,31 +30,30 @@ async def get_current_client(request: Request, db: Session = Depends(get_db)) ->
     if not host:
         host = request.headers.get("host", "").strip()
 
-    # Clean the host (strip port for the clean_host version)
-    clean_host = host.split(":")[0].strip()
-
-    # 1. Try matching the FULL HOST exactly
-    # 2. Try matching the CLEAN HOST (without port)
-    # 3. Handle cases where the DB has 'https://domain.com/' instead of just 'domain.com'
+    # 2. Lookup Client in DB
+    # We check if the DB domain matches the host or clean_host anywhere (handles protocols/slashes)
     client = db.query(Client).filter(
         (Client.domain_name.ilike(f"%{host}%")) |
         (Client.domain_name.ilike(f"%{clean_host}%")),
         Client.is_active == True
     ).first()
 
-
-    # 3. Development shortcuts for localhost
-    if not client and "localhost" in clean_host:
-        # If hitting backend port directly (:8000), or if no specific port match found
-        client = db.query(Client).filter(Client.is_active == True).first()
-        
+    # 3. GLOBAL FALLBACK (Crucial for testing/production direct visits)
+    # If no exact match found, just pick the FIRST active client.
+    # This prevents 404 errors when visiting the backend URL directly.
     if not client:
-        print(f"DEBUG: No client found for host='{host}' (clean_host='{clean_host}')")
+        client = db.query(Client).filter(Client.is_active == True).first()
+        if client:
+            print(f"INFO: No exact match for '{host}'. Using default client: {client.name}")
+
+    if not client:
+        print(f"ERROR: No clients found in database at all.")
         raise HTTPException(
             status_code=404, 
-            detail=f"No active client found for host: {host}. Ensure this domain is registered in the Admin Panel."
+            detail="No clients registered. Please add a client in the Admin Panel first."
         )
     return client
+
 
 
 # ─── Helpers (Mirrored from tickettailor.py for isolation) ───────────────────
