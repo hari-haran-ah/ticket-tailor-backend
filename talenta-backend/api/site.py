@@ -31,10 +31,9 @@ async def get_current_client(request: Request, db: Session = Depends(get_db)) ->
         host = request.headers.get("host", "").strip()
 
     # 2. Lookup Client in DB
-    # We check if the DB domain matches the host or clean_host anywhere (handles protocols/slashes)
+    # We check if the DB domain matches the host (handles protocols/slashes)
     client = db.query(Client).filter(
-        (Client.domain_name.ilike(f"%{host}%")) |
-        (Client.domain_name.ilike(f"%{clean_host}%")),
+        Client.domain_name.ilike(f"%{host}%"),
         Client.is_active == True
     ).first()
 
