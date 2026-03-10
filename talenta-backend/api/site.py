@@ -33,19 +33,15 @@ async def get_current_client(request: Request, db: Session = Depends(get_db)) ->
     # Clean the host (strip port for the clean_host version)
     clean_host = host.split(":")[0].strip()
 
-    # 1. Try matching the FULL HOST (including port) first
-    # This is crucial for local development differentiating between :5174, :5175, etc.
+    # 1. Try matching the FULL HOST exactly
+    # 2. Try matching the CLEAN HOST (without port)
+    # 3. Handle cases where the DB has 'https://domain.com/' instead of just 'domain.com'
     client = db.query(Client).filter(
-        Client.domain_name.ilike(f"%{host}%"),
+        (Client.domain_name.ilike(f"%{host}%")) |
+        (Client.domain_name.ilike(f"%{clean_host}%")),
         Client.is_active == True
     ).first()
 
-    # 2. Try matching the CLEAN HOST (without port) if full match fails
-    if not client:
-        client = db.query(Client).filter(
-            Client.domain_name.ilike(f"%{clean_host}%"),
-            Client.is_active == True
-        ).first()
 
     # 3. Development shortcuts for localhost
     if not client and "localhost" in clean_host:
@@ -53,11 +49,13 @@ async def get_current_client(request: Request, db: Session = Depends(get_db)) ->
         client = db.query(Client).filter(Client.is_active == True).first()
         
     if not client:
+        print(f"DEBUG: No client found for host='{host}' (clean_host='{clean_host}')")
         raise HTTPException(
             status_code=404, 
-            detail=f"No active client found for host: {host}"
+            detail=f"No active client found for host: {host}. Ensure this domain is registered in the Admin Panel."
         )
     return client
+
 
 # ─── Helpers (Mirrored from tickettailor.py for isolation) ───────────────────
 
