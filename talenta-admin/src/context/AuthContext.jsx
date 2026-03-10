@@ -28,6 +28,8 @@ export function AuthProvider({ children }) {
 
     const logout = async () => {
         await api.post('/api/auth/logout')
+        localStorage.removeItem('talenta_access_token')
+        localStorage.removeItem('talenta_refresh_token')
         setAdmin(null)
         window.location.href = '/login'
     }
