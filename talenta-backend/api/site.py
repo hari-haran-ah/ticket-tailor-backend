@@ -16,26 +16,36 @@ router = APIRouter(prefix="/api/site", tags=["Site"])
 # ─── Dependencies ─────────────────────────────────────────────────────────────
 
 async def get_current_client(request: Request, db: Session = Depends(get_db)) -> Client:
-    """Identify the client based on proxy headers, origin, or host."""
-    # 1. Prioritize X-Forwarded-Host (Production/Proxy)
-    host = request.headers.get("x-forwarded-host")
-    
-    # 2. Fallback to Origin/Referer (Frontend SPAs)
+    """Identify the client based on explicit ID, Origin, or Host headers."""
+    # 1. Check for explicit Client ID header (highest priority)
+    client_id = request.headers.get("x-client-id")
+    if client_id and client_id.isdigit():
+        client = db.query(Client).filter(Client.id == int(client_id), Client.is_active == True).first()
+        if client:
+            return client
+
+    # 2. Prioritize Origin / Referer (essential for frontend SPAs on Vercel)
+    host = None
+    origin = request.headers.get("origin") or request.headers.get("referer", "")
+    if origin:
+        # Extract domain from https://domain.com/path
+        host = origin.replace("https://", "").replace("http://", "").split("/")[0].strip()
+
+    # 3. Fallback to X-Forwarded-Host (Production/Proxy)
     if not host:
-        origin = request.headers.get("origin") or request.headers.get("referer", "")
-        if origin:
-            host = origin.replace("https://", "").replace("http://", "").split("/")[0].strip()
+        host = request.headers.get("x-forwarded-host")
             
-    # 3. Final Fallback to standard Host header
+    # 4. Final Fallback to standard Host header
     if not host:
         host = request.headers.get("host", "").strip()
 
-    # 2. Lookup Client in DB
-    # We check if the DB domain matches the host (handles protocols/slashes)
-    client = db.query(Client).filter(
-        Client.domain_name.ilike(f"%{host}%"),
-        Client.is_active == True
-    ).first()
+    # 2. Lookup Client in DB by domain matching
+    client = None
+    if host:
+        client = db.query(Client).filter(
+            Client.domain_name.ilike(f"%{host}%"),
+            Client.is_active == True
+        ).first()
 
     # 3. GLOBAL FALLBACK (Crucial for testing/production direct visits)
     # If no exact match found, just pick the FIRST active client.
@@ -43,7 +53,7 @@ async def get_current_client(request: Request, db: Session = Depends(get_db)) ->
     if not client:
         client = db.query(Client).filter(Client.is_active == True).first()
         if client:
-            print(f"INFO: No exact match for '{host}'. Using default client: {client.name}")
+            print(f"INFO: No exact match for '{host or 'unknown'}'. Using default client: {client.name}")
 
     if not client:
         print(f"ERROR: No clients found in database at all.")
