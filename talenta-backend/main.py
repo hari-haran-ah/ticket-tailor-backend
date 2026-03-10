@@ -38,13 +38,16 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # ─── CORS ───────────────────────────────────────────────────────────────────
+# We allow both specific origins and a regex for Vercel preview deployments
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    allow_origins=[str(origin).rstrip("/") for origin in settings.BACKEND_CORS_ORIGINS],
+    allow_origin_regex=r"https://ticket-tailor-backend-.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # ─── Routers ──────────────────────────────────────────────────────────────────
 app.include_router(auth.router)

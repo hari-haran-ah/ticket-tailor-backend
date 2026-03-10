@@ -31,7 +31,9 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://localhost:3000",
         "https://ticket-tailor-backend-7bsz.vercel.app",
+        "https://ticket-tailor-backend.vercel.app",
     ]
+
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
