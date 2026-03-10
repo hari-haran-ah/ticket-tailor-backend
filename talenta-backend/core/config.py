@@ -26,7 +26,11 @@ class Settings(BaseSettings):
     COOKIE_DOMAIN: Optional[str] = None  # Set to your root domain in production
 
     # CORS
-    FRONTEND_ORIGIN: str = "http://localhost:5173"
+    BACKEND_CORS_ORIGINS: List[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://ticket-tailor-backend-7bsz.vercel.app",
+    ]
 
     # Stripe
     STRIPE_SECRET_KEY: str = ""
