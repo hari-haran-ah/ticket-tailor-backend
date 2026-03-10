@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-950 text-slate-100 font-sans antialiased;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-950;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-800 rounded-full hover:bg-primary-600 transition-colors;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-dark-900 rounded-2xl border border-white/5 shadow-lg;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-all duration-200 active:scale-95 text-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-dark-800 hover:bg-white/10 text-white font-medium px-6 py-2.5 rounded-xl border border-white/5 transition-all duration-200 active:scale-95 text-sm;
+  }
+
+  .btn-danger {
+    @apply bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium px-6 py-2.5 rounded-xl border border-red-500/20 transition-all duration-200 text-sm;
+  }
+
+  .input-field {
+    @apply w-full bg-dark-950 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-primary-600/50 focus:border-primary-600/50 transition-all text-sm;
+  }
+
+  /* Autofill overrides */
+  .input-field:-webkit-autofill,
+  .input-field:-webkit-autofill:hover,
+  .input-field:-webkit-autofill:focus {
+    -webkit-text-fill-color: white;
+    -webkit-box-shadow: 0 0 0px 1000px #020617 inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-white/50 mb-1.5;
+  }
+
+  .badge-status {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-published {
+    @apply badge-status bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+  }
+
+  .badge-draft {
+    @apply badge-status bg-white/10 text-white/50 border border-white/10;
+  }
+
+  .badge-closed {
+    @apply badge-status bg-red-500/20 text-red-400 border border-red-500/30;
+  }
+
+  .badge-green {
+    @apply badge-status bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+  }
+
+  .badge-red {
+    @apply badge-status bg-red-500/20 text-red-400 border border-red-500/30;
+  }
+
+  .stat-card {
+    @apply card p-6 flex items-center gap-4 hover:border-primary-600/20 transition-all duration-300;
+  }
+
+  /* Event Description Styles */
+  .description-content {
+    @apply text-white/60 leading-relaxed text-left;
+  }
+
+  .description-content p {
+    @apply mb-4 last:mb-0;
+  }
+
+  .description-content a {
+    @apply underline underline-offset-4 transition-colors font-medium;
+    color: #60a5fa;
+  }
+
+  .description-content a:hover {
+    color: #93c5fd;
+  }
+
+  .description-content strong {
+    @apply text-white font-semibold;
+  }
+
+  /* ── Skeleton Shimmer ────────────────────────────────────────── */
+  @keyframes skeleton-wave {
+    0% {
+      background-position: -400px 0;
+    }
+
+    100% {
+      background-position: 400px 0;
+    }
+  }
+
+  .skeleton-shimmer {
+    background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0.03) 25%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.03) 75%);
+    background-size: 800px 100%;
+    animation: skeleton-wave 2s ease-in-out infinite;
+  }
+}
