@@ -1,4 +1,4 @@
-from fastapi import Cookie, HTTPException, status, Depends
+from fastapi import Cookie, HTTPException, status, Depends, Request
 from sqlalchemy.orm import Session
 from typing import Optional
 from core.security import decode_token, ACCESS_COOKIE_NAME
@@ -10,22 +10,31 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+
 def get_current_admin(
+    request: Request = None, # Added to access headers directly if needed
     db: Session = Depends(get_db),
     talenta_access_token: Optional[str] = Cookie(default=None, alias=ACCESS_COOKIE_NAME),
+    header_token: Optional[str] = Depends(oauth2_scheme)
 ) -> Admin:
     """
-    Dependency that reads the HttpOnly access-token cookie, validates the JWT,
-    and returns the current Admin from the database.
+    Dependency that reads the HttpOnly access-token cookie OR Authorization header,
+    validates the JWT, and returns the current Admin from the database.
     """
-    if not talenta_access_token:
-        logger.warning(f"AUTHENTICATION FAILED: Missing cookie '{ACCESS_COOKIE_NAME}'")
+    token = talenta_access_token or header_token
+
+    if not token:
+        logger.warning(f"AUTHENTICATION FAILED: Missing cookie '{ACCESS_COOKIE_NAME}' and no Authorization header")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated. Please log in.",
         )
 
-    payload = decode_token(talenta_access_token)
+    payload = decode_token(token)
+
     if payload is None:
         logger.error("AUTHENTICATION FAILED: Invalid or expired JWT token")
         raise HTTPException(

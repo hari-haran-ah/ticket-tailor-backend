@@ -36,35 +36,57 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
     refresh_token = create_refresh_token({"sub": str(admin.id)})
     set_auth_cookies(response, access_token, refresh_token)
 
-    return {"message": "Login successful", "admin": AdminOut.model_validate(admin)}
+    return {
+        "message": "Login successful",
+        "admin": AdminOut.model_validate(admin),
+        "access_token": access_token,
+        "refresh_token": refresh_token
+    }
 
+
+from pydantic import BaseModel
+
+class TokenRefreshRequest(BaseModel):
+    refresh_token: Optional[str] = None
 
 @router.post("/refresh")
 def refresh_token(
     response: Response,
+    payload: Optional[TokenRefreshRequest] = None, # Accept from body
     db: Session = Depends(get_db),
     talenta_refresh_token: Optional[str] = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
 ):
-    """Issue a new access token using the refresh cookie."""
+    """Issue a new access token using the refresh cookie or body token."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired refresh token",
     )
-    if not talenta_refresh_token:
+    
+    # Use cookie if present, otherwise use body
+    token = talenta_refresh_token or (payload.refresh_token if payload else None)
+    
+    if not token:
         raise credentials_exception
 
-    payload = decode_token(talenta_refresh_token)
-    if payload is None or payload.get("type") != "refresh":
+    payload_data = decode_token(token)
+    if payload_data is None or payload_data.get("type") != "refresh":
         raise credentials_exception
 
-    admin = db.query(Admin).filter(Admin.id == int(payload["sub"])).first()
+    admin = db.query(Admin).filter(Admin.id == int(payload_data["sub"])).first()
+
     if not admin or not admin.is_active:
         raise credentials_exception
 
     new_access = create_access_token({"sub": str(admin.id)})
     new_refresh = create_refresh_token({"sub": str(admin.id)})
     set_auth_cookies(response, new_access, new_refresh)
-    return {"message": "Token refreshed"}
+    
+    return {
+        "message": "Token refreshed",
+        "access_token": new_access,
+        "refresh_token": new_refresh
+    }
+
 
 
 @router.post("/logout")
