@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     COOKIE_DOMAIN: Optional[str] = None  # Set to your root domain in production
 
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = [
+    BACKEND_CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
         "http://localhost:3000",
         "https://ticket-tailor-backend-7bsz.vercel.app",
@@ -64,6 +64,7 @@ class Settings(BaseSettings):
         env_file=".env",
         extra="allow",
         case_sensitive=True,
+        env_parse_list_separator=",",
     )
 
 
