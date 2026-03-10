@@ -22,8 +22,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # Cookie
-    COOKIE_SECURE: bool = False          # Set True in production (HTTPS)
-    COOKIE_SAMESITE: str = "lax"         # "lax" | "strict" | "none"
+    COOKIE_SECURE: bool = True          # Set True in production (HTTPS)
+    COOKIE_SAMESITE: str = "none"         # "lax" | "strict" | "none"
     COOKIE_DOMAIN: Optional[str] = None  # Set to your root domain in production
 
     # CORS
