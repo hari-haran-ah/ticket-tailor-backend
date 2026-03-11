@@ -31,9 +31,6 @@ function ClientModal({ client, onClose, onSaved }) {
         setLoading(true); setError('')
 
         // Frontend Validations
-        if (!/^[a-zA-Z0-9 \-]+$/.test(form.name)) {
-            setError('Client name must be alphanumeric (letters, numbers, spaces, and hyphens)'); setLoading(false); return
-        }
         if (!form.domain_name.trim().startsWith('http://') && !form.domain_name.trim().startsWith('https://')) {
             setError('Domain must start with http:// or https://'); setLoading(false); return
         }
