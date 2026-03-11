@@ -8,11 +8,11 @@ import { useAuth } from '../context/AuthContext'
 import LogoutModal from './LogoutModal'
 
 const navItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    // { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/clients', icon: Users, label: 'Clients' },
     { to: '/events', icon: CalendarDays, label: 'Events' },
-    { to: '/payments', icon: DollarSign, label: 'Payments' },
-    { to: '/analysis', icon: BarChart3, label: 'Analysis' },
+    // { to: '/payments', icon: DollarSign, label: 'Payments' },
+    // { to: '/analysis', icon: BarChart3, label: 'Analysis' },
 ]
 
 const MIN_WIDTH = 64

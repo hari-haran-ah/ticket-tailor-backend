@@ -36,7 +36,7 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               <Routes>
-                <Route path="/" element={<DashboardPage />} />
+                <Route path="/" element={<Navigate to="/clients" replace />} />
                 <Route path="/clients" element={<ClientsPage />} />
                 <Route path="/events/:clientId?" element={<EventsPage />} />
                 <Route path="/events/:clientId/:eventId" element={<EventDetailsPage />} />
