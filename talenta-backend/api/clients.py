@@ -81,3 +81,20 @@ def delete_client(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
     db.delete(client)
     db.commit()
+
+
+@router.patch("/{client_id}/toggle-status", response_model=ClientOut)
+def toggle_client_status(
+    client_id: int,
+    db: Session = Depends(get_db),
+    _: Admin = Depends(get_current_admin),
+):
+    """Toggle the is_active status of a client."""
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+    client.is_active = not client.is_active
+    db.commit()
+    db.refresh(client)
+    return client
+

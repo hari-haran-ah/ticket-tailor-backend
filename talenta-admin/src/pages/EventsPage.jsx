@@ -6,7 +6,7 @@ import {
     Ticket, MapPin
 } from 'lucide-react'
 import Skeleton from '../components/Skeleton'
-import ClientSelector from '../components/ClientSelector'
+import ClientPillBar from '../components/ClientPillBar'
 import ManageTicketsModal from '../components/ManageTicketsModal'
 
 function EventCard({ event, clientId, onManage }) {
@@ -290,13 +290,14 @@ export default function EventsPage() {
                 )}
             </div>
 
-            <div className="max-w-sm">
-                <label className="label mb-3 block">Select Client</label>
-                <ClientSelector
+            {/* ── Client pill bar ── */}
+            <div className="space-y-2">
+                <p className="text-white/40 text-xs uppercase tracking-widest font-semibold">Select Client</p>
+                <ClientPillBar
                     clients={clients}
                     selectedId={selectedClient}
                     onSelect={(id) => { setSelectedClient(id); loadEvents(id) }}
-                    placeholder="Choose a client..."
+                    loading={loadingClients}
                 />
             </div>
 

@@ -5,7 +5,7 @@ import {
     DollarSign, CalendarDays, PieChart, X
 } from 'lucide-react'
 import Skeleton from '../components/Skeleton'
-import ClientSelector from '../components/ClientSelector'
+import ClientPillBar from '../components/ClientPillBar'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, Legend,
@@ -144,17 +144,14 @@ export default function AnalysisPage() {
                 <p className="text-white/40 text-sm mt-1">Deep-dive performance metrics per client</p>
             </div>
 
-            {/* Client selector */}
-            <div className="max-w-md">
-                <label className="label mb-3 block">Select Target Client</label>
-                <ClientSelector
+            {/* ── Client pill bar ── */}
+            <div className="space-y-2">
+                <p className="text-white/40 text-xs uppercase tracking-widest font-semibold">Select Client</p>
+                <ClientPillBar
                     clients={clients}
                     selectedId={selectedClient}
-                    onSelect={(id) => {
-                        setSelectedClient(id)
-                        loadAnalytics(id)
-                    }}
-                    placeholder="Search and select a client..."
+                    onSelect={(id) => { setSelectedClient(id); loadAnalytics(id) }}
+                    loading={loadingClients}
                 />
             </div>
 
