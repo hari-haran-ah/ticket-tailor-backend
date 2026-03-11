@@ -290,6 +290,70 @@ export default function EventDetailsPage() {
                                         onChange={e => setFormData({ ...formData, description: e.target.value })}
                                     />
                                 </div>
+
+                                {/* Options */}
+                                <div className="flex items-center gap-6 pt-2">
+                                    <label className="flex items-center gap-2 text-sm text-white/70 cursor-pointer hover:text-white transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 rounded border-white/20 bg-white/5 text-primary-500 focus:ring-primary-500 focus:ring-offset-gray-900"
+                                            checked={formData.online_event}
+                                            onChange={e => setFormData({ ...formData, online_event: e.target.checked })}
+                                        />
+                                        <span>Online Event</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 text-sm text-white/70 cursor-pointer hover:text-white transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 rounded border-white/20 bg-white/5 text-primary-500 focus:ring-primary-500 focus:ring-offset-gray-900"
+                                            checked={formData.private_event}
+                                            onChange={e => setFormData({ ...formData, private_event: e.target.checked })}
+                                        />
+                                        <span>Private Event</span>
+                                    </label>
+                                </div>
+
+                                {/* Venue Details */}
+                                <div className="pt-2">
+                                    <h4 className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-3">Venue Details</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="label">Venue Name</label>
+                                            <input
+                                                disabled={formData.online_event}
+                                                className="input-field disabled:opacity-30 disabled:cursor-not-allowed"
+                                                placeholder="e.g. ExCeL London"
+                                                value={formData.venue_name}
+                                                onChange={e => setFormData({ ...formData, venue_name: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="label">Postal Code</label>
+                                            <input
+                                                disabled={formData.online_event}
+                                                className="input-field disabled:opacity-30 disabled:cursor-not-allowed"
+                                                placeholder="e.g. E16 1XL"
+                                                value={formData.postal_code}
+                                                onChange={e => setFormData({ ...formData, postal_code: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="label">Country</label>
+                                            <select
+                                                disabled={formData.online_event}
+                                                className="input-field appearance-none disabled:opacity-30 disabled:cursor-not-allowed"
+                                                value={formData.country}
+                                                onChange={e => setFormData({ ...formData, country: e.target.value })}
+                                            >
+                                                <option value="US">United States</option>
+                                                <option value="GB">United Kingdom</option>
+                                                <option value="IN">India</option>
+                                                <option value="CA">Canada</option>
+                                                <option value="AU">Australia</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
                                     <button type="button" onClick={() => setEditMode(false)} className="btn-secondary px-6">Cancel</button>
                                     <button type="submit" disabled={isSaving} className="btn-primary px-8">
