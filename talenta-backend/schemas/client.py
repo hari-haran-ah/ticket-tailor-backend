@@ -16,13 +16,6 @@ class ClientBase(BaseModel):
     address: Optional[str] = None
     is_active: bool = True
 
-    @field_validator("name")
-    @classmethod
-    def validate_name(cls, v: str) -> str:
-        if not re.match(r"^[a-zA-Z0-9 \-]+$", v):
-            raise ValueError("Client name must be alphanumeric (letters, numbers, spaces, and hyphens)")
-        return v
-
     @field_validator("domain_name")
     @classmethod
     def validate_domain(cls, v: str) -> str:
