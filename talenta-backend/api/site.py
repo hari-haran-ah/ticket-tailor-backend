@@ -63,7 +63,7 @@ async def get_current_client(request: Request, db: Session = Depends(get_db)) ->
     client = None
     tested_matches = []
 
-    # 4. Strict DB Lookup Logic
+    # 4. Phase 1: Strict DB Lookup Logic
     # We fetch ALL active clients and do a strict normalized comparison to avoid 'ilike %host%' collisions
     all_active_clients = db.query(Client).filter(Client.is_active == True).all()
     
@@ -74,10 +74,24 @@ async def get_current_client(request: Request, db: Session = Depends(get_db)) ->
                 client = c
                 break
         if client:
-            print(f"DEBUG [MATCH]: Found exact match for candidate '{candidate}' -> Client: {client.name}")
+            print(f"DEBUG [MATCH]: Found exact (strict) match for candidate '{candidate}' -> Client: {client.name}")
             break
 
-    # 5. NO FALLBACK (Strict matching only)
+    # 5. Phase 2: Hybrid 'LIKE' Match (Backup)
+    # If strict matching fails, try a fuzzy match as a safety net
+    if not client:
+        print(f"DEBUG [IDENTIFY]: Strict match failed. Attempting hybrid 'LIKE' match...")
+        for candidate in candidates:
+            # We look for clients where the domain name contains the candidate string, or vice versa
+            client = db.query(Client).filter(
+                Client.is_active == True,
+                (Client.domain_name.ilike(f"%{candidate}%")) | (func.replace(func.replace(Client.domain_name, 'https://', ''), 'http://', '').ilike(f"%{candidate}%"))
+            ).first()
+            if client:
+                print(f"DEBUG [MATCH]: Found hybrid 'LIKE' match for candidate '{candidate}' -> Client: {client.name} (DB Domain: {client.domain_name})")
+                break
+
+    # 6. NO FALLBACK (Strict matching only)
     if not client:
         print(f"ERROR [IDENTIFY]: No client found matching candidates: {candidates}")
         raise HTTPException(

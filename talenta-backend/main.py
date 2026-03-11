@@ -8,8 +8,9 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from core.config import settings
-from db.session import engine, get_db
 from api import auth, clients, tickettailor, dashboard, site, checkout
+from db.session import engine, get_db, SessionLocal
+from models.client import Client
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,17 +38,58 @@ async def global_exception_handler(request: Request, exc: Exception):
         },
     )
 
-# ─── CORS ───────────────────────────────────────────────────────────────────
-# We allow both specific origins and a regex for Vercel preview deployments
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[str(origin).rstrip("/") for origin in settings.BACKEND_CORS_ORIGINS],
-    allow_origin_regex=r"https://ticket-tailor-backend-.*\.vercel\.app",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["X-Client-ID"],
-)
+# ─── Dynamic CORS Middleware ────────────────────────────────────────────────
+# Allows any origin that is registered in our 'clients' database table
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+
+def clean_origin_for_cors(origin: str) -> str:
+    if not origin: return ""
+    return origin.replace("https://", "").replace("http://", "").split(":")[0].rstrip("/").lower()
+
+class DynamicCORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin")
+        allowed_origin = False
+        
+        # 1. Check if the origin is a Static Admin Origin
+        if origin and origin in [str(o).rstrip("/") for o in settings.BACKEND_CORS_ORIGINS]:
+            allowed_origin = True
+            
+        # 2. If not an Admin Origin, check if it's a Dynamic Client Origin from the DB
+        if origin and not allowed_origin:
+            cleaned = clean_origin_for_cors(origin)
+            db = SessionLocal()
+            try:
+                client = db.query(Client).filter(
+                    (Client.domain_name.ilike(f"%{cleaned}%")) & (Client.is_active == True)
+                ).first()
+                if client:
+                    allowed_origin = True
+            finally:
+                db.close()
+                
+        # Handle Preflight (OPTIONS) requests
+        if request.method == "OPTIONS":
+            response = Response()
+            if allowed_origin:
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Client-ID, X-Requested-With"
+                response.headers["Access-Control-Expose-Headers"] = "X-Client-ID"
+            return response
+
+        # Handle regular requests
+        response = await call_next(request)
+        if allowed_origin:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Expose-Headers"] = "X-Client-ID"
+            
+        return response
+
+app.add_middleware(DynamicCORSMiddleware)
 
 
 # ─── Routers ──────────────────────────────────────────────────────────────────
