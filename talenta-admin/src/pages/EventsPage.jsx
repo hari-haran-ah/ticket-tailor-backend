@@ -136,6 +136,16 @@ function CreateEventModal({ isOpen, onClose, client_id, onCreated }) {
                             />
                         </div>
 
+                        <div className="space-y-1">
+                            <label className="label">Description</label>
+                            <textarea
+                                className="input-field min-h-[100px] resize-none"
+                                placeholder="A brief description of the event..."
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            />
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label className="label">Start Date</label>
