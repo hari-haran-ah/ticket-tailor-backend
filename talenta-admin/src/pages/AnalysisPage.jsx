@@ -361,7 +361,7 @@ export default function AnalysisPage() {
                                     <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
                                     <Tooltip
                                         cursor={{ fill: '#ffffff05' }}
-                                        contentStyle={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, color: 'black' }}
+                                        contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }}
                                     />
                                     <Bar dataKey="revenue" radius={[6, 6, 6, 6]} name={`Revenue (${getCurrencySymbol()})`} barSize={40}>
                                         {monthlyRevenueData.map((entry, index) => (
@@ -388,7 +388,7 @@ export default function AnalysisPage() {
                                         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
                                         <XAxis dataKey="name" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
                                         <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                        <Tooltip cursor={{ fill: '#ffffff05' }} contentStyle={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, color: 'black' }} />
+                                        <Tooltip cursor={{ fill: '#ffffff05' }} contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
                                         <Bar dataKey="revenue" radius={[6, 6, 6, 6]} name={`Revenue (${getCurrencySymbol()})`} barSize={32}>
                                             {eventChartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                         </Bar>
@@ -417,7 +417,7 @@ export default function AnalysisPage() {
                                         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" horizontal={false} />
                                         <XAxis type="number" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
                                         <YAxis type="category" dataKey="name" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} width={110} />
-                                        <Tooltip cursor={{ fill: '#ffffff05' }} contentStyle={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, color: 'black' }} />
+                                        <Tooltip cursor={{ fill: '#ffffff05' }} contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
                                         <Bar dataKey="sold" radius={[0, 6, 6, 0]} name="Tickets Sold" barSize={20}>
                                             {topTicketsData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                         </Bar>
@@ -446,7 +446,7 @@ export default function AnalysisPage() {
                                         <Pie data={topEarningsData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} dataKey="earnings" nameKey="name" label>
                                             {topEarningsData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                         </Pie>
-                                        <Tooltip contentStyle={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, color: 'black' }} />
+                                        <Tooltip contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
                                         <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 11, paddingTop: 20 }} />
                                     </RechartsPie>
                                 </ResponsiveContainer>
@@ -472,7 +472,7 @@ export default function AnalysisPage() {
                                     <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} dataKey="value" nameKey="name" label>
                                         {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                     </Pie>
-                                    <Tooltip contentStyle={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, color: 'black' }} />
+                                    <Tooltip contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
                                     <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 11, paddingTop: 20 }} />
                                 </RechartsPie>
                             </ResponsiveContainer>
@@ -499,7 +499,7 @@ export default function AnalysisPage() {
                                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
                                     <XAxis dataKey="index" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
                                     <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                    <Tooltip contentStyle={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, color: 'black' }} />
+                                    <Tooltip contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
                                     <Area type="monotone" dataKey="cumulative" stroke="#10b981" fillOpacity={1} fill="url(#colorCum)" name={`Revenue (${getCurrencySymbol()})`} />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -517,7 +517,7 @@ export default function AnalysisPage() {
                                     <XAxis type="number" dataKey="x" name="Price" unit={getCurrencySymbol()} tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
                                     <YAxis type="number" dataKey="y" name="Volume" unit=" tix" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
                                     <ZAxis range={[60, 400]} />
-                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, color: 'black' }} />
+                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
                                     <Scatter name="Events" data={scatterData} fill="#f59e0b">
                                         {scatterData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                     </Scatter>
