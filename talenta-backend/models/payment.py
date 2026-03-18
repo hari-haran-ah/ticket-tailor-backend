@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Numeric, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Numeric, ForeignKey, UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from db.base import Base
@@ -6,6 +6,13 @@ from db.base import Base
 
 class Payment(Base):
     __tablename__ = "payments"
+
+    # Structural guard: prevents duplicate webhook processing even under race conditions.
+    # If Stripe fires the same webhook twice simultaneously, the second insert will hit
+    # this constraint and raise an IntegrityError, which the webhook handler catches safely.
+    __table_args__ = (
+        UniqueConstraint("stripe_session_id", "ticket_type_id", name="uq_payment_session_ticket"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     stripe_session_id = Column(String, index=True, nullable=False)

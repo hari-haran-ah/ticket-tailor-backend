@@ -8,6 +8,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from starlette.responses import JSONResponse
 
 from core.config import settings
@@ -260,6 +261,25 @@ async def create_checkout_session(
         target_ticket = next((t for t in ticket_types if t["id"] == item.ticket_type_id), None)
         if not target_ticket:
             raise HTTPException(status_code=404, detail=f"Ticket type not found.")
+            
+        if item.quantity > 10:
+            raise HTTPException(status_code=400, detail="Maximum 10 tickets per type allowed per transaction.")
+            
+        status = target_ticket.get("status", "")
+        if status not in ["on_sale", "locked"]:  # locked tickets might be unlocked via TT code, but on_sale is primary
+            # Let's just strictly enforce on_sale if we must, but safe fallback:
+            if status != "on_sale":
+                raise HTTPException(status_code=400, detail=f"Ticket '{target_ticket.get('name')}' is currently not available.")
+
+        capacity = target_ticket.get("quantity") or 0
+        sold = target_ticket.get("quantity_sold", 0)
+        
+        available = target_ticket.get("quantity_available")
+        if available is None:
+            available = max(0, capacity - sold)
+            
+        if capacity > 0 and item.quantity > available:
+            raise HTTPException(status_code=400, detail=f"Only {available} tickets left for '{target_ticket.get('name')}'.")
             
         unit_amount = target_ticket.get("price", 0)
             
@@ -546,6 +566,14 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                 await _issue_tt_tickets_and_notify(created_payments, client.tt_api_key, db)
 
         except Exception as e:
+            # If this is a unique constraint violation, it means a duplicate webhook
+            # delivery raced past our SELECT FOR UPDATE guard and tried to insert
+            # the same payment again. This is safe to ignore — the first webhook
+            # already processed the payment successfully.
+            if isinstance(e, IntegrityError):
+                print(f"INFO: Duplicate webhook race condition for session {session_id} — IntegrityError caught, safely ignoring.")
+                db.rollback()
+                return JSONResponse(content={"status": "already_processed"})
             print(f"ERROR: Failed to process webhook for session {session_id}: {e}")
             db.rollback()
             return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)

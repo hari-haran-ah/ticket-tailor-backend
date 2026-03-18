@@ -98,11 +98,27 @@ export default function CheckoutPage() {
                 setEvent(data)
                 const selected = Object.keys(selectedTickets).map(id => {
                     const t = (data.ticket_types || []).find(x => x.id === id)
-                    return t ? { ...t, quantity: selectedTickets[id] } : null
+                    if (!t) return null
+                    
+                    const capacity = t.quantity || 0
+                    const sold = t.quantity_sold || 0
+                    const available = t.quantity_available != null 
+                        ? t.quantity_available 
+                        : Math.max(0, capacity - sold)
+                        
+                    let requestedQty = selectedTickets[id]
+                    if (requestedQty > 10) requestedQty = 10
+                    if (capacity > 0 && requestedQty > available) {
+                        requestedQty = available
+                    }
+                    
+                    if (requestedQty <= 0) return null
+                    
+                    return { ...t, quantity: requestedQty }
                 }).filter(Boolean)
 
                 if (selected.length === 0) {
-                    setCheckoutError('Selected tickets not found. They may have been removed.')
+                    setCheckoutError('Selected tickets are sold out or unavailable.')
                 } else {
                     setTickets(selected)
                 }
