@@ -16,18 +16,23 @@ router = APIRouter(prefix="/api/site", tags=["Site"])
 # ─── Dependencies ─────────────────────────────────────────────────────────────
 
 def clean_domain(url: str) -> str:
-    """Standardizes a domain by removing protocols, port numbers, and trailing slashes."""
+    """Standardizes a domain by removing protocols, port numbers (except for localhost), and trailing slashes."""
     if not url:
         return ""
     # Remove protocol
     url = url.replace("https://", "").replace("http://", "")
-    # Remove port number if present (e.g., localhost:3000 -> localhost)
-    url = url.split(":")[0]
-    # Remove trailing slash
-    url = url.rstrip("/")
-    # Remove path from referers (e.g., site.com/path -> site.com)
-    url = url.split("/")[0]
-    return url.lower().strip()
+    
+    # Extract host part (before first slash)
+    host_part = url.split("/")[0]
+    
+    # If it's localhost or 127.0.0.1, we preserve the port for local development debugging
+    if "localhost" in host_part or "127.0.0.1" in host_part:
+        url = host_part
+    else:
+        # For production domains, we typically strip the port
+        url = host_part.split(":")[0]
+        
+    return url.rstrip("/").lower().strip()
 
 async def get_current_client(request: Request, db: Session = Depends(get_db)) -> Client:
     """Robustly identify the client based on explicit ID, Origin, or Host headers."""

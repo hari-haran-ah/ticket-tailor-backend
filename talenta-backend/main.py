@@ -52,11 +52,23 @@ class DynamicCORSMiddleware(BaseHTTPMiddleware):
         origin = request.headers.get("origin")
         allowed_origin = False
         
-        # 1. Check if the origin is a Static Admin Origin
-        if origin and origin in [str(o).rstrip("/") for o in settings.BACKEND_CORS_ORIGINS]:
-            allowed_origin = True
+        # 1. Static Checks (Admin Panel & Localhost)
+        if origin:
+            # First: Exact match (for Admin Panel)
+            if origin.rstrip("/") in [str(o).rstrip("/") for o in settings.BACKEND_CORS_ORIGINS]:
+                allowed_origin = True
+                print(f"DEBUG: [CORS] Allowed Static Admin Origin: {origin}")
             
-        # 2. If not an Admin Origin, check if it's a Dynamic Client Origin from the DB
+            # Second: Flexible localhost port match
+            if not allowed_origin:
+                cleaned_origin_host = clean_origin_for_cors(origin)
+                if cleaned_origin_host in ["localhost", "127.0.0.1"]:
+                    allowed_static_hosts = [clean_origin_for_cors(str(o)) for o in settings.BACKEND_CORS_ORIGINS]
+                    if cleaned_origin_host in allowed_static_hosts:
+                        allowed_origin = True
+                        print(f"DEBUG: [CORS] Allowed Localhost/Dev Origin: {origin}")
+            
+        # 2. If not matched above, check if it's a Dynamic Client Origin from the DB
         if origin and not allowed_origin:
             cleaned = clean_origin_for_cors(origin)
             db = SessionLocal()
@@ -66,6 +78,9 @@ class DynamicCORSMiddleware(BaseHTTPMiddleware):
                 ).first()
                 if client:
                     allowed_origin = True
+                    print(f"DEBUG: [CORS] Allowed Dynamic Client: {client.name} (Origin: {origin})")
+                else:
+                    print(f"DEBUG: [CORS] Origin Not Recognized: {origin}")
             finally:
                 db.close()
                 

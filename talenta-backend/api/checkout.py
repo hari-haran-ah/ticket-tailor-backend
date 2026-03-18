@@ -1,4 +1,11 @@
+import sys
 import stripe
+import json
+
+# Ensure stdout can handle UTF-8 on Windows (prevents UnicodeEncodeError from log lines)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
@@ -169,7 +176,8 @@ async def _issue_tt_tickets_and_notify(payments: list, client_api_key: str, db: 
             "name":           buyer_name,  # Added 'name' field as well to satisfy TT validation for some accounts
             "email":          buyer_email,
             "send_email":     "true",      # Ask TT to also send their own email
-            "reference":      f"{buyer_name}|{buyer_email}",
+            # Make reference unique per ticket_type so TT does not reject duplicate refs
+            "reference":      f"{buyer_name}|{buyer_email}|{payment.ticket_type_id}",
         }
         if first.customer_phone:
             payload_tt["phone"] = first.customer_phone
@@ -179,7 +187,8 @@ async def _issue_tt_tickets_and_notify(payments: list, client_api_key: str, db: 
                 result = await _tt_post(client_api_key, "/issued_tickets", payload_tt)
                 ticket_id = result.get("id", "")
                 barcode   = result.get("barcode") or ticket_id
-                print(f"INFO: TT issued ticket {ticket_id} → {buyer_email}")
+                # Use ASCII arrow to avoid UnicodeEncodeError on Windows stdout
+                print(f"INFO: TT issued ticket {ticket_id} -> {buyer_email}")
                 
                 # Update the local payment record with the latest successfully issued TT ticket ID
                 payment.tt_ticket_id = ticket_id
@@ -193,13 +202,17 @@ async def _issue_tt_tickets_and_notify(payments: list, client_api_key: str, db: 
             except Exception as e:
                 all_tt_issued = False
                 err_msg = str(e)
-                print(f"WARN: TT ticket issuance failed for {payment.ticket_type_id}: {err_msg}")
+                try:
+                    print(f"WARN: TT ticket issuance failed for {payment.ticket_type_id}: {err_msg}")
+                except Exception:
+                    pass
                 # Save the error to the database so we can show it to the user
                 payment.tt_error = err_msg
                 
                 # If we want to strictly abort (e.g., instant free checkout where we MUST have credits), we raise
                 if raise_on_error:
                     raise HTTPException(status_code=400, detail=f"Ticket Tailor issuance failed: {err_msg}")
+
 
     # ── Step 2: Manual inventory reduction fallback ────────────────────────────
     # If ANY TT issuance failed (e.g. billing not configured), manually reduce the REMAINDER.
@@ -481,6 +494,20 @@ async def create_checkout_session(
         
         return {"session_id": session_id, "url": f"{base_url}/checkout/success?session_id={session_id}"}
 
+    # Store payment data in Stripe metadata instead of creating pending records
+    payment_metadata = {
+        'client_id': str(client.id),
+        'client_name': client.name,
+        'stripe_account_id': client.stripe_account_id,
+        'event_id': payload.event_id,
+        'event_name': event_data.get("name", "Unknown Event"),
+        'customer_email': payload.customer_email,
+        'customer_name': payload.customer_name or "",
+        'customer_phone': payload.customer_phone or "",
+        'payments_data': json.dumps(payments_to_create),
+        'multiple_tickets': 'true',
+    }
+
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
@@ -497,38 +524,13 @@ async def create_checkout_session(
                 # We optionally take a cut here
                 **({'application_fee_amount': platform_fee_amount} if platform_fee_amount > 0 else {})
             },
-            # Metadata is useful for the webhook to identify what the payment was for
-            metadata={
-                'client_id': str(client.id),
-                'event_id': payload.event_id,
-                'multiple_tickets': 'true',
-            }
+            # Store all payment data in metadata so we can create records only when payment succeeds
+            metadata=payment_metadata
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Stripe Error: {str(e)}")
 
-    # 4. Save Pending Payments in DB
-    for p_data in payments_to_create:
-        payment = Payment(
-            stripe_session_id=session.id,
-            client_id=client.id,
-            client_name=client.name,
-            stripe_account_id=client.stripe_account_id,
-            event_id=payload.event_id,
-            event_name=event_data.get("name", "Unknown Event"),
-            ticket_type_id=p_data["ticket_type_id"],
-            ticket_type_name=p_data["ticket_type_name"],
-            quantity=p_data["quantity"],
-            unit_amount_cents=p_data["unit_amount_cents"],
-            total_amount_cents=p_data["total_amount_cents"],
-            currency='usd',
-            customer_email=payload.customer_email,
-            customer_name=payload.customer_name,
-            customer_phone=payload.customer_phone,
-            status="pending"
-        )
-        db.add(payment)
-    db.commit()
+    # No longer creating pending payment records here - they will be created only on successful payment
 
     return {"session_id": session.id, "url": session.url}
 
@@ -553,52 +555,88 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     # Handle the checkout.session.completed event
     if event_stripe["type"] == "checkout.session.completed":
         session = event_stripe["data"]["object"]
+        session_id = session["id"]
 
-        # Fetch payments for this session
-        payments = db.query(Payment).filter(Payment.stripe_session_id == session["id"]).all()
-        if payments:
-            client = db.query(Client).filter(Client.id == payments[0].client_id).first()
+        # Check if payments already exist (prevent duplicate processing)
+        existing_payments = db.query(Payment).filter(Payment.stripe_session_id == session_id).all()
+        if existing_payments:
+            print(f"INFO: Webhook for session {session_id} already processed — skipping duplicate.")
+            return JSONResponse(content={"status": "already_processed"})
 
-            # ── IDEMPOTENCY CHECK ──────────────────────────────────────────────
-            # Stripe retries webhooks multiple times. We check if this session
-            # was already processed (status already 'complete') to avoid running
-            # inventory reduction multiple times for the same payment.
-            already_processed = all(p.status == "complete" for p in payments)
-            if already_processed:
-                print(f"INFO: Webhook for session {session['id']} already processed — skipping duplicate.")
-                return JSONResponse(content={"status": "already_processed"})
-            # ──────────────────────────────────────────────────────────────────
+        # Extract payment data from session metadata
+        metadata = session.get("metadata", {})
+        client_id = metadata.get("client_id")
+        payments_data_str = metadata.get("payments_data", "[]")
 
-            # Mark payments as complete
-            for payment in payments:
-                payment.status = "complete"
-                payment.stripe_payment_intent_id = session.get("payment_intent")
+        if not client_id:
+            print(f"ERROR: No client_id in session metadata for {session_id}")
+            return JSONResponse(content={"status": "error", "message": "Missing client_id in metadata"})
 
-                # Additional customer info from checkout
-                customer_details = session.get("customer_details", {})
-                if customer_details and customer_details.get("name"):
-                    payment.customer_name = customer_details["name"]
+        try:
+            payments_data = json.loads(payments_data_str)
+        except json.JSONDecodeError:
+            print(f"ERROR: Invalid payments_data JSON in session metadata for {session_id}")
+            return JSONResponse(content={"status": "error", "message": "Invalid payments_data in metadata"})
 
-                payment.paid_at = datetime.utcnow()
-            db.commit()
+        client = db.query(Client).filter(Client.id == int(client_id)).first()
+        if not client:
+            print(f"ERROR: Client {client_id} not found for session {session_id}")
+            return JSONResponse(content={"status": "error", "message": "Client not found"})
 
-            # Issue TT tickets, reduce inventory as fallback, and send email
-            if client and client.tt_api_key:
-                print(f"INFO: Processing ticket issuance for session {session['id']}")
-                await _issue_tt_tickets_and_notify(payments, client.tt_api_key, db)
+        # Create payment records now that payment is confirmed
+        created_payments = []
+        for p_data in payments_data:
+            payment = Payment(
+                stripe_session_id=session_id,
+                client_id=client.id,
+                client_name=metadata.get("client_name", client.name),
+                stripe_account_id=metadata.get("stripe_account_id", client.stripe_account_id),
+                event_id=metadata.get("event_id"),
+                event_name=metadata.get("event_name", "Unknown Event"),
+                ticket_type_id=p_data["ticket_type_id"],
+                ticket_type_name=p_data["ticket_type_name"],
+                quantity=p_data["quantity"],
+                unit_amount_cents=p_data["unit_amount_cents"],
+                total_amount_cents=p_data["total_amount_cents"],
+                currency='usd',
+                customer_email=metadata.get("customer_email"),
+                customer_name=metadata.get("customer_name"),
+                customer_phone=metadata.get("customer_phone"),
+                status="complete",
+                stripe_payment_intent_id=session.get("payment_intent"),
+                paid_at=datetime.utcnow()
+            )
+
+            # Additional customer info from checkout session
+            customer_details = session.get("customer_details", {})
+            if customer_details and customer_details.get("name"):
+                payment.customer_name = customer_details["name"]
+
+            db.add(payment)
+            created_payments.append(payment)
+
+        db.commit()
+
+        # Issue TT tickets, reduce inventory as fallback, and send email
+        if client and client.tt_api_key:
+            print(f"INFO: Processing ticket issuance for session {session_id}")
+            await _issue_tt_tickets_and_notify(created_payments, client.tt_api_key, db)
 
     elif event_stripe["type"] in ("checkout.session.expired", "payment_intent.payment_failed"):
         session_or_intent = event_stripe["data"]["object"]
-        payment_id = session_or_intent.get("id")
+        session_id = session_or_intent.get("id")
 
-        payments = db.query(Payment).filter(
-            (Payment.stripe_session_id == payment_id) |
-            (Payment.stripe_payment_intent_id == payment_id)
-        ).all()
+        # For expired sessions, check if any payment records were created and mark them as failed
+        payments = db.query(Payment).filter(Payment.stripe_session_id == session_id).all()
 
-        for payment in payments:
-            payment.status = "failed"
-        db.commit()
+        if payments:
+            for payment in payments:
+                payment.status = "failed"
+            db.commit()
+            print(f"INFO: Marked {len(payments)} payment records as failed for session {session_id}")
+        else:
+            # No payment records exist (which is expected with new flow) - just log the expiration
+            print(f"INFO: Session {session_id} expired - no payment records to update")
 
     return JSONResponse(content={"status": "success"})
 
@@ -610,27 +648,118 @@ async def get_checkout_session_status(session_id: str, db: Session = Depends(get
     Used by the frontend to poll for order confirmation.
     """
     payments = db.query(Payment).filter(Payment.stripe_session_id == session_id).all()
-    if not payments:
-        raise HTTPException(status_code=404, detail="Session not found")
 
-    # If any row is complete, consider the whole session processed
-    status = "pending"
-    if any(p.status == "complete" for p in payments):
-        status = "complete"
-    elif any(p.status == "failed" for p in payments):
-        status = "failed"
+    if payments:
+        # Payment records exist, so payment was completed
+        status = "complete" if any(p.status == "complete" for p in payments) else "failed"
 
-    # Return some basic info for the success page
-    first = payments[0]
-    # Collect the first error found, if any
-    tt_error = next((p.tt_error for p in payments if p.tt_error), None)
-    
+        first = payments[0]
+        tt_error = next((p.tt_error for p in payments if p.tt_error), None)
+
+        return {
+            "status": status,
+            "session_id": session_id,
+            "event_name": first.event_name,
+            "customer_name": first.customer_name,
+            "total_amount_cents": sum(p.total_amount_cents for p in payments),
+            "ticket_count": sum(p.quantity for p in payments),
+            "tt_error": tt_error
+        }
+    else:
+        # No payment records exist yet - check Stripe session status
+        try:
+            stripe_session = stripe.checkout.Session.retrieve(session_id)
+            stripe_status = stripe_session.get("payment_status", "unpaid")
+
+            if stripe_status == "paid":
+                # Payment completed but webhook might not have processed yet
+                # Extract basic info from session metadata for display
+                metadata = stripe_session.get("metadata", {})
+                payments_data = json.loads(metadata.get("payments_data", "[]"))
+
+                total_amount = sum(p.get("total_amount_cents", 0) for p in payments_data)
+                ticket_count = sum(p.get("quantity", 0) for p in payments_data)
+
+                return {
+                    "status": "complete",
+                    "session_id": session_id,
+                    "event_name": metadata.get("event_name", "Event"),
+                    "customer_name": metadata.get("customer_name", "Customer"),
+                    "total_amount_cents": total_amount,
+                    "ticket_count": ticket_count,
+                    "tt_error": None
+                }
+            elif stripe_session.get("status") == "expired":
+                return {
+                    "status": "failed",
+                    "session_id": session_id,
+                    "event_name": "Event",
+                    "customer_name": "Customer",
+                    "total_amount_cents": 0,
+                    "ticket_count": 0,
+                    "tt_error": "Session expired"
+                }
+            else:
+                # Session still pending
+                return {
+                    "status": "pending",
+                    "session_id": session_id,
+                    "event_name": "Event",
+                    "customer_name": "Customer",
+                    "total_amount_cents": 0,
+                    "ticket_count": 0,
+                    "tt_error": None
+                }
+
+        except stripe.error.InvalidRequestError:
+            # Session not found in Stripe
+            raise HTTPException(status_code=404, detail="Session not found")
+        except Exception as e:
+            print(f"ERROR: Failed to retrieve Stripe session {session_id}: {e}")
+            raise HTTPException(status_code=500, detail="Failed to check session status")
+
+
+@router.post("/cleanup/expired-sessions")
+async def cleanup_expired_sessions(db: Session = Depends(get_db)):
+    """
+    Administrative endpoint to cleanup any orphaned payment records from
+    expired Stripe sessions. This can be called periodically via cron job.
+    """
+    from datetime import datetime, timedelta
+
+    # Find payments that are still "pending" and older than 24 hours
+    # (Stripe checkout sessions expire after 24 hours)
+    cutoff_time = datetime.utcnow() - timedelta(hours=24)
+    old_pending_payments = db.query(Payment).filter(
+        Payment.status == "pending",
+        Payment.created_at < cutoff_time
+    ).all()
+
+    cleaned_count = 0
+    failed_count = 0
+
+    for payment in old_pending_payments:
+        try:
+            # Check actual Stripe session status
+            stripe_session = stripe.checkout.Session.retrieve(payment.stripe_session_id)
+            if stripe_session.get("status") == "expired":
+                # Mark as failed since Stripe confirmed it's expired
+                payment.status = "failed"
+                cleaned_count += 1
+            # If session is not expired, leave it as pending
+        except stripe.error.InvalidRequestError:
+            # Session doesn't exist in Stripe, mark as failed
+            payment.status = "failed"
+            cleaned_count += 1
+        except Exception as e:
+            print(f"ERROR: Failed to check Stripe session {payment.stripe_session_id}: {e}")
+            failed_count += 1
+
+    if cleaned_count > 0:
+        db.commit()
+
     return {
-        "status": status,
-        "session_id": session_id,
-        "event_name": first.event_name,
-        "customer_name": first.customer_name,
-        "total_amount_cents": sum(p.total_amount_cents for p in payments),
-        "ticket_count": sum(p.quantity for p in payments),
-        "tt_error": tt_error
-    }
+        "cleaned_up": cleaned_count,
+        "failed_to_check": failed_count,
+        "total_checked": len(old_pending_payments)
+    }   

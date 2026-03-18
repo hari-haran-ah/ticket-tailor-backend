@@ -9,7 +9,7 @@ class Payment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     stripe_session_id = Column(String, index=True, nullable=False)
-    stripe_payment_intent_id = Column(String, unique=True, index=True, nullable=True)
+    stripe_payment_intent_id = Column(String, index=True, nullable=True)
     
     # Store essential data independent of TT API drops
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False, index=True)
