@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from typing import List
+from sqlalchemy import or_, func
+from typing import List, Optional
 import httpx
 import base64
 
@@ -9,7 +10,7 @@ from db.session import get_db
 from models.admin import Admin
 from models.client import Client
 from models.payment import Payment
-from schemas.payment import PaymentOut
+from schemas.payment import PaymentOut, PaginatedPaymentsOut
 from core.config import settings
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
@@ -66,13 +67,8 @@ async def get_dashboard(
                         c_tickets += qty
                         c_revenue += qty * price
 
-                # Calculate earnings from actual payments (stored platform_fee_cents)
-                client_payments = db.query(Payment).filter(
-                    Payment.client_id == client.id,
-                    Payment.status == "complete"
-                ).all()
-                total_platform_earnings_cents = sum(p.platform_fee_cents for p in client_payments)
-                c_earnings = (total_platform_earnings_cents / 100.0) * 0.79
+                # Calculate earnings directly as a percentage of the live TicketTailor revenue
+                c_earnings = c_revenue * (float(client.platform_fee) / 100.0)
 
                 print(f"INFO: Client {client.name} - Events: {c_events}, Tickets: {c_tickets}, Revenue: £{c_revenue:.2f}")
 
@@ -117,9 +113,49 @@ async def get_dashboard(
     }
 
 
-@router.get("/payments", response_model=List[PaymentOut])
-async def get_all_payments(db: Session = Depends(get_db), _: Admin = Depends(get_current_admin)):
+@router.get("/payments", response_model=PaginatedPaymentsOut)
+async def get_all_payments(
+    db: Session = Depends(get_db),
+    _: Admin = Depends(get_current_admin),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    search: Optional[str] = None,
+    client_id: Optional[int] = None
+):
     """
-    Get all platform payments, ordered by newest first.
+    Get paginated platform payments with aggregated stats, ordered by newest first.
     """
-    return db.query(Payment).order_by(Payment.created_at.desc()).all()
+    query = db.query(Payment)
+    
+    if client_id is not None:
+        query = query.filter(Payment.client_id == client_id)
+        
+    if search:
+        search_term = f"%{search.lower()}%"
+        query = query.filter(
+            or_(
+                func.lower(Payment.client_name).like(search_term),
+                func.lower(Payment.customer_email).like(search_term),
+                func.lower(Payment.event_name).like(search_term)
+            )
+        )
+        
+    total_records = query.count()
+    successful_count = query.filter(Payment.status == 'complete').count()
+    pending_failed_count = total_records - successful_count
+    
+    vol = query.filter(Payment.status == 'complete').with_entities(func.sum(Payment.total_amount_cents)).scalar()
+    total_volume_cents = int(vol) if vol else 0
+    
+    offset = (page - 1) * limit
+    payments = query.order_by(Payment.created_at.desc()).offset(offset).limit(limit).all()
+    
+    return {
+        "data": payments,
+        "total_records": total_records,
+        "stats": {
+            "total_volume_cents": total_volume_cents,
+            "successful": successful_count,
+            "pending_failed": pending_failed_count
+        }
+    }

@@ -57,11 +57,11 @@ export default function EventDetailsPage() {
     })
 
     useEffect(() => {
-        loadEventDetails()
+        loadEventDetails(true)
     }, [eventId])
 
-    const loadEventDetails = async () => {
-        setLoading(true)
+    const loadEventDetails = async (showSkeleton = true) => {
+        if (showSkeleton) setLoading(true)
         try {
             const { data } = await api.get(`/api/tt/${clientId}/events/${eventId}`)
             const ev = data.data
@@ -78,9 +78,9 @@ export default function EventDetailsPage() {
                 private_event: ev.private === 'true' || ev.private === true
             })
         } catch (e) {
-            setError('Failed to load event details')
+            if (showSkeleton) setError('Failed to load event details')
         } finally {
-            setLoading(false)
+            if (showSkeleton) setLoading(false)
         }
     }
 
@@ -89,11 +89,11 @@ export default function EventDetailsPage() {
         setIsSaving(true)
         try {
             await api.patch(`/api/tt/${clientId}/events/${eventId}`, formData)
+            await loadEventDetails(false)
             setEditMode(false)
             setToastConfig({ show: true, message: `Event "${formData.name}" updated successfully.` })
-            setTimeout(() => { loadEventDetails() }, 1500)
         } catch (e) {
-            setError('Update failed')
+            setToastConfig({ show: true, message: 'Update failed.' })
         } finally {
             setIsSaving(false)
         }
@@ -107,10 +107,10 @@ export default function EventDetailsPage() {
                 navigate('/events')
             } else if (deleteConfig.type === 'ticket') {
                 await api.delete(`/api/tt/${clientId}/events/${eventId}/ticket_types/${deleteConfig.id}`)
-                loadEventDetails()
+                loadEventDetails(false)
             } else if (deleteConfig.type === 'group') {
                 await api.delete(`/api/tt/${clientId}/events/${eventId}/ticket_groups/${deleteConfig.id}`)
-                loadEventDetails()
+                loadEventDetails(false)
             }
             setDeleteConfig({ ...deleteConfig, show: false })
             setToastConfig({ show: true, message: 'Deleted successfully.' })
@@ -226,7 +226,7 @@ export default function EventDetailsPage() {
                     <Link to="/events" className="text-white/30 hover:text-primary-400 flex items-center gap-1.5 text-xs font-medium transition-colors">
                         <ChevronLeft size={14} /> Back to Events
                     </Link>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">{event.name}</h1>
+                    <h1 className="text-2xl font-bold text-white tracking-tight break-words">{event.name}</h1>
                     <div className="flex flex-wrap items-center gap-3">
                         <span className={statusClass}>{event.status}</span>
                         <span className="text-white/30 text-xs flex items-center gap-1.5">
@@ -368,7 +368,7 @@ export default function EventDetailsPage() {
                                         <Info size={12} /> Description
                                     </h3>
                                     <div
-                                        className="description-content"
+                                        className="description-content max-h-[400px] overflow-y-auto overflow-x-hidden break-words whitespace-pre-wrap pr-3 text-sm text-white/80 leading-relaxed"
                                         dangerouslySetInnerHTML={{ __html: event.description || '<p class="text-white/30 italic">No description provided.</p>' }}
                                     />
                                 </div>
@@ -395,7 +395,7 @@ export default function EventDetailsPage() {
                                         </div>
                                         <div>
                                             <p className="text-xs text-white/40 mb-0.5">Venue</p>
-                                            <p className="text-sm font-medium text-white">{event.venue?.name || 'Online / TBA'}</p>
+                                            <p className="text-sm font-medium text-white break-words pr-4">{event.venue?.name || 'Online / TBA'}</p>
                                             {event.venue?.postal_code && (
                                                 <p className="text-xs text-white/40">{event.venue.postal_code}</p>
                                             )}
@@ -493,7 +493,7 @@ export default function EventDetailsPage() {
                 isOpen={showManageModal}
                 onClose={() => { setShowManageModal(false); setManageConfig({ mode: 'create', data: null }); }}
                 client_id={clientId} event={event} groups={groups}
-                onCreated={() => loadEventDetails()}
+                onCreated={() => loadEventDetails(false)}
                 mode={manageConfig.mode} editData={manageConfig.data}
             />
 

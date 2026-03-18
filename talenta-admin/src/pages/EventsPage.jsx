@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import api from '../lib/api'
 import {
     CalendarDays, AlertCircle, Clock, Plus, Settings, X,
-    Ticket, MapPin
+    Ticket, MapPin, RefreshCw
 } from 'lucide-react'
 import Skeleton from '../components/Skeleton'
 import ClientPillBar from '../components/ClientPillBar'
@@ -293,11 +293,27 @@ export default function EventsPage() {
                     <p className="text-primary-400 text-xs font-semibold uppercase tracking-widest mb-1">Client Assets</p>
                     <h1 className="text-2xl font-bold text-white tracking-tight">Event Management</h1>
                 </div>
-                {selectedClient && (
-                    <button onClick={() => setIsCreateOpen(true)} className="btn-primary flex items-center gap-2">
-                        <Plus size={16} /> Create Event
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => {
+                            setLoadingClients(true);
+                            api.get('/api/clients').then(({ data }) => {
+                                setClients(data.filter(c => c.is_active));
+                                setLoadingClients(false);
+                                if (selectedClient) loadEvents(selectedClient);
+                            });
+                        }} 
+                        className="btn-secondary group flex items-center gap-2"
+                    >
+                        <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                        <span className="hidden sm:inline">Refresh</span>
                     </button>
-                )}
+                    {selectedClient && (
+                        <button onClick={() => setIsCreateOpen(true)} className="btn-primary flex items-center gap-2">
+                            <Plus size={16} /> Create Event
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* ── Client pill bar ── */}

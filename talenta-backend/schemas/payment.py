@@ -42,3 +42,13 @@ class PaymentOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class PaymentStatsOut(BaseModel):
+    total_volume_cents: int
+    successful: int
+    pending_failed: int
+
+class PaginatedPaymentsOut(BaseModel):
+    data: List[PaymentOut]
+    total_records: int
+    stats: PaymentStatsOut

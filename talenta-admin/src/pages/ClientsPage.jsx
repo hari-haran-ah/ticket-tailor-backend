@@ -5,7 +5,7 @@ import {
     Plus, Pencil, Trash2, X, Check, AlertCircle,
     Globe, Key, DollarSign, Phone, Mail, MapPin, Users,
     CalendarDays, Search, ChevronLeft, ChevronRight,
-    Eye, ToggleLeft, ToggleRight, Power
+    Eye, ToggleLeft, ToggleRight, Power, RefreshCw
 } from 'lucide-react'
 import Skeleton from '../components/Skeleton'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
@@ -364,11 +364,17 @@ export default function ClientsPage() {
                     <h1 className="text-xl md:text-2xl font-bold text-white">Clients</h1>
                     <p className="text-white/40 text-sm mt-1">{clients.length} client(s) registered</p>
                 </div>
-                <button onClick={() => setModal('create')} className="btn-primary flex items-center gap-2">
-                    <Plus size={16} />
-                    <span className="hidden sm:inline">New Client</span>
-                    <span className="sm:hidden">New</span>
-                </button>
+                <div className="flex items-center gap-3">
+                    <button onClick={load} className="btn-secondary group flex items-center gap-2">
+                        <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                        <span className="hidden sm:inline">Refresh</span>
+                    </button>
+                    <button onClick={() => setModal('create')} className="btn-primary flex items-center gap-2">
+                        <Plus size={16} />
+                        <span className="hidden sm:inline">New Client</span>
+                        <span className="sm:hidden">New</span>
+                    </button>
+                </div>
             </div>
 
             {/* Search Bar */}

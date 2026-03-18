@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import api from '../lib/api'
 import {
     BarChart3, AlertCircle, TrendingUp, Ticket,
-    DollarSign, CalendarDays, PieChart, X
+    DollarSign, CalendarDays, PieChart, X, RefreshCw
 } from 'lucide-react'
 import Skeleton from '../components/Skeleton'
 import ClientPillBar from '../components/ClientPillBar'
@@ -139,9 +139,25 @@ export default function AnalysisPage() {
         <div className="p-8 space-y-8">
 
             {/* Page header */}
-            <div className="border-b border-white/5 pb-6">
-                <h1 className="text-2xl font-bold text-white tracking-tight">Intelligence Analysis</h1>
-                <p className="text-white/40 text-sm mt-1">Deep-dive performance metrics per client</p>
+            <div className="flex items-end justify-between border-b border-white/5 pb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-white tracking-tight">Intelligence Analysis</h1>
+                    <p className="text-white/40 text-sm mt-1">Deep-dive performance metrics per client</p>
+                </div>
+                <button 
+                    onClick={() => {
+                        setLoadingClients(true);
+                        api.get('/api/clients').then(({ data }) => {
+                            setClients(data.filter(c => c.is_active));
+                            setLoadingClients(false);
+                            if (selectedClient) loadAnalytics(selectedClient);
+                        });
+                    }}
+                    className="btn-secondary group flex items-center gap-2"
+                >
+                    <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                    <span className="hidden sm:inline">Refresh</span>
+                </button>
             </div>
 
             {/* ── Client pill bar ── */}
