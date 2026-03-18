@@ -584,45 +584,28 @@ async def client_analytics(
     total_events = len(all_events)
     published_events = sum(1 for ev in all_events if ev.get("status") == "published")
 
-    # 2. Count tickets from TicketTailor API ticket_types (using quantity_issued)
-    # Build per-event breakdown for charts
-    total_tickets_sold = 0
-    total_revenue = 0.0
-
+    # 2. Initialize event map - all values will be calculated from Payment records for consistency
     import datetime
 
     event_map = {}
 
     for ev in all_events:
         event_id = ev["id"]
-        event_tickets = 0
-        event_revenue = 0.0
 
-        # Count tickets from ticket_types using quantity_issued
-        for tt in ev.get("ticket_types", []):
-            tt_quantity_issued = tt.get("quantity_issued", 0) or 0
-            tt_price = tt.get("price", 0) / 100.0  # Convert cents to dollars/pounds
-
-            event_tickets += tt_quantity_issued
-            event_revenue += tt_quantity_issued * tt_price
-
-        total_tickets_sold += event_tickets
-        total_revenue += event_revenue
-
-        # Initialize event data - earnings will be populated from Payment records
+        # Initialize event data - all metrics will be populated from Payment records
         event_map[event_id] = {
             "id": event_id,
             "name": ev["name"],
             "status": ev.get("status", "unknown"),
             "start_iso": ev.get("start", {}).get("iso") or ev.get("start", {}).get("date"),
-            "tickets": event_tickets,
-            "revenue": event_revenue,
-            "earnings": 0.0,  # Will be calculated from actual payments
-            "avg_price": round(event_revenue / event_tickets, 2) if event_tickets > 0 else 0.0,
+            "tickets": 0,
+            "revenue": 0.0,
+            "earnings": 0.0,
+            "avg_price": 0.0,
             "monthly_breakdown": {}
         }
 
-    # 3. Get actual earnings from Payment records (stored platform_fee_cents)
+    # 3. Calculate all metrics from Payment records for consistency
     from models.payment import Payment
 
     # Fetch all completed payments for this client
@@ -631,16 +614,37 @@ async def client_analytics(
         Payment.status == "complete"
     ).all()
 
-    # Calculate total platform earnings from stored values
-    total_platform_earnings_cents = sum(p.platform_fee_cents for p in client_payments)
+    # Detect primary currency (use the most common currency from payments)
+    currency_counts = {}
+    for payment in client_payments:
+        curr = payment.currency.upper()
+        currency_counts[curr] = currency_counts.get(curr, 0) + 1
 
-    # Aggregate earnings by event
+    primary_currency = max(currency_counts, key=currency_counts.get) if currency_counts else "USD"
+
+    # Use payment currency directly - no conversion needed
+    total_tickets_sold = 0
+    total_revenue = 0.0
+    total_platform_earnings = 0.0
+
+    # Aggregate ALL metrics from payments in their original currency
     for payment in client_payments:
         event_id = payment.event_id
+
+        # Use actual payment amounts directly (no currency conversion)
+        payment_revenue = payment.total_amount_cents / 100.0
+        payment_earnings = payment.platform_fee_cents / 100.0
+
+        # Add to totals
+        total_tickets_sold += payment.quantity
+        total_revenue += payment_revenue
+        total_platform_earnings += payment_earnings
+
+        # Update event-specific data if event exists in map
         if event_id in event_map:
-            # Add earnings from this payment (convert cents to dollars, then to GBP)
-            payment_earnings_gbp = (payment.platform_fee_cents / 100.0) * 0.79
-            event_map[event_id]["earnings"] += payment_earnings_gbp
+            event_map[event_id]["tickets"] += payment.quantity
+            event_map[event_id]["revenue"] += payment_revenue
+            event_map[event_id]["earnings"] += payment_earnings
 
             # Monthly breakdown by transaction date
             if payment.paid_at:
@@ -651,32 +655,31 @@ async def client_analytics(
 
                 mb = event_map[event_id]["monthly_breakdown"][month_key]
                 mb["tickets"] += payment.quantity
-                mb["revenue"] += (payment.total_amount_cents / 100.0) * 0.79
-                mb["earnings"] += payment_earnings_gbp
+                mb["revenue"] += payment_revenue
+                mb["earnings"] += payment_earnings
 
-    # Format numbers
+    # Format numbers and calculate avg_price
     for ev_data in event_map.values():
         ev_data["revenue"] = round(ev_data["revenue"], 2)
         ev_data["earnings"] = round(ev_data["earnings"], 2)
+        ev_data["avg_price"] = round(ev_data["revenue"] / ev_data["tickets"], 2) if ev_data["tickets"] > 0 else 0.0
 
         # Format monthly breakdown numbers
         for k, mb in ev_data.get("monthly_breakdown", {}).items():
             mb["revenue"] = round(mb["revenue"], 2)
             mb["earnings"] = round(mb["earnings"], 2)
 
-    # Convert total platform earnings to GBP
-    total_platform_earnings_gbp = (total_platform_earnings_cents / 100.0) * 0.79
-
     return {
         "client_id": client_id,
         "client_name": client.name,
         "platform_fee": float(client.platform_fee),
+        "currency": primary_currency,  # Return detected currency
         "analytics": {
             "total_events": total_events,
             "published_events": published_events,
             "total_tickets_sold": total_tickets_sold,
-            "total_revenue_gbp": round(total_revenue, 2),
-            "platform_earnings_gbp": round(total_platform_earnings_gbp, 2),
+            "total_revenue": round(total_revenue, 2),  # In primary payment currency
+            "platform_earnings": round(total_platform_earnings, 2),  # In primary payment currency
             "per_event": list(event_map.values())
         },
     }

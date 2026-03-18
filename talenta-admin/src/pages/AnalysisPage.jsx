@@ -24,6 +24,13 @@ export default function AnalysisPage() {
     const [error, setError] = useState('')
     const [selectedMonth, setSelectedMonth] = useState(null) // null = All Time
 
+    // Get currency symbol from analytics data
+    const getCurrencySymbol = () => {
+        const currency = analytics?.currency?.toUpperCase() || 'USD'
+        const symbols = { USD: '$', GBP: '£', EUR: '€' }
+        return symbols[currency] || currency
+    }
+
     useEffect(() => {
         api.get('/api/clients').then(({ data }) => {
             setClients(data.filter(c => c.is_active))
@@ -66,6 +73,8 @@ export default function AnalysisPage() {
 
     // ── Monthly aggregation (Global transaction months) ──
     const monthlyMap = {}
+    const eventsByMonth = {} // Track unique events per month
+
     allEventChartData.forEach(ev => {
         Object.entries(ev.monthly_breakdown).forEach(([monthKey, stats]) => {
             if (!monthlyMap[monthKey]) {
@@ -74,12 +83,19 @@ export default function AnalysisPage() {
                 const sortKey = `${yr}-${monthIndex.toString().padStart(2, '0')}`
 
                 monthlyMap[monthKey] = { name: monthKey, revenue: 0, tickets: 0, events: 0, sortKey }
+                eventsByMonth[monthKey] = new Set()
             }
             monthlyMap[monthKey].revenue += stats.revenue
             monthlyMap[monthKey].tickets += stats.tickets
-            monthlyMap[monthKey].events += 1 // Count event as active in this month
+            eventsByMonth[monthKey].add(ev.id) // Track unique events
         })
     })
+
+    // Set correct event counts
+    Object.keys(monthlyMap).forEach(monthKey => {
+        monthlyMap[monthKey].events = eventsByMonth[monthKey].size
+    })
+
     const monthlyRevenueData = Object.values(monthlyMap)
         .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
         .map(m => ({ ...m, revenue: +m.revenue.toFixed(2) }))
@@ -104,15 +120,21 @@ export default function AnalysisPage() {
     }
 
     // ── Derived stats ──
-    const topEarningsData = [...eventChartData].sort((a, b) => b.earnings - a.earnings).slice(0, 5)
-    const topTicketsData = [...eventChartData].sort((a, b) => b.sold - a.sold).slice(0, 5)
+    const topEarningsData = [...eventChartData]
+        .filter(ev => ev.earnings > 0) // Only show events with actual earnings
+        .sort((a, b) => b.earnings - a.earnings)
+        .slice(0, 5)
+    const topTicketsData = [...eventChartData]
+        .filter(ev => ev.sold > 0) // Only show events with ticket sales
+        .sort((a, b) => b.sold - a.sold)
+        .slice(0, 5)
 
     const filteredStats = {
         total_events: eventChartData.length,
         published_events: eventChartData.filter(ev => ev.status === 'published').length,
         total_tickets_sold: eventChartData.reduce((s, ev) => s + ev.sold, 0),
-        total_revenue_gbp: +eventChartData.reduce((s, ev) => s + ev.revenue, 0).toFixed(2),
-        platform_earnings_gbp: +eventChartData.reduce((s, ev) => s + ev.earnings, 0).toFixed(2),
+        total_revenue: +eventChartData.reduce((s, ev) => s + ev.revenue, 0).toFixed(2),
+        platform_earnings: +eventChartData.reduce((s, ev) => s + ev.earnings, 0).toFixed(2),
     }
 
     // ── Cumulative growth (sorted by date) ──
@@ -144,7 +166,7 @@ export default function AnalysisPage() {
                     <h1 className="text-2xl font-bold text-white tracking-tight">Intelligence Analysis</h1>
                     <p className="text-white/40 text-sm mt-1">Deep-dive performance metrics per client</p>
                 </div>
-                <button 
+                <button
                     onClick={() => {
                         setLoadingClients(true);
                         api.get('/api/clients').then(({ data }) => {
@@ -245,7 +267,7 @@ export default function AnalysisPage() {
                                     <button
                                         key={m.name}
                                         onClick={() => setSelectedMonth(prev => prev === m.name ? null : m.name)}
-                                        title={`${m.events} events · ${m.tickets} tickets · £${m.revenue.toLocaleString()}`}
+                                        title={`${m.events} events · ${m.tickets} tickets · ${getCurrencySymbol()}${m.revenue.toLocaleString()}`}
                                         className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border whitespace-nowrap ${selectedMonth === m.name
                                             ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30'
                                             : 'bg-white/5 border-white/10 text-white/50 hover:text-white hover:bg-white/10'
@@ -267,7 +289,7 @@ export default function AnalysisPage() {
                                         {selectedMonth}
                                     </span>
                                     <span className="text-[11px] text-white/30">
-                                        {filteredStats.total_events} events · {filteredStats.total_tickets_sold} tickets · £{filteredStats.total_revenue_gbp.toLocaleString()} revenue
+                                        {filteredStats.total_events} events · {filteredStats.total_tickets_sold} tickets · {getCurrencySymbol()}{filteredStats.total_revenue.toLocaleString()} revenue
                                     </span>
                                 </div>
                             )}
@@ -282,7 +304,7 @@ export default function AnalysisPage() {
                             { icon: CalendarDays, label: 'Total Events', value: filteredStats.total_events, color: 'bg-primary-600/20 text-primary-400' },
                             { icon: CalendarDays, label: 'Published', value: filteredStats.published_events, color: 'bg-emerald-500/20 text-emerald-400' },
                             { icon: Ticket, label: 'Tickets Sold', value: filteredStats.total_tickets_sold, color: 'bg-purple-500/20 text-purple-400' },
-                            { icon: DollarSign, label: 'Gross Revenue', value: `£${filteredStats.total_revenue_gbp.toLocaleString()}`, color: 'bg-amber-500/20 text-amber-400' },
+                            { icon: DollarSign, label: 'Gross Revenue', value: `${getCurrencySymbol()}${filteredStats.total_revenue.toLocaleString()}`, color: 'bg-amber-500/20 text-amber-400' },
                         ].map(({ icon: Icon, label, value, color }) => (
                             <div key={label} className="stat-card">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
@@ -307,7 +329,7 @@ export default function AnalysisPage() {
                                     Estimated Net Revenue — {selectedMonth ? selectedMonth : 'All Time'}
                                 </p>
                                 <p className="text-3xl font-bold text-white tracking-tight">
-                                    £{filteredStats.platform_earnings_gbp.toLocaleString()}
+                                    {getCurrencySymbol()}{filteredStats.platform_earnings.toLocaleString()}
                                 </p>
                             </div>
                         </div>
@@ -341,7 +363,7 @@ export default function AnalysisPage() {
                                         cursor={{ fill: '#ffffff05' }}
                                         contentStyle={{ background: '#141622', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }}
                                     />
-                                    <Bar dataKey="revenue" radius={[6, 6, 6, 6]} name="Revenue (£)" barSize={40}>
+                                    <Bar dataKey="revenue" radius={[6, 6, 6, 6]} name={`Revenue (${getCurrencySymbol()})`} barSize={40}>
                                         {monthlyRevenueData.map((entry, index) => (
                                             <Cell
                                                 key={`cell-${index}`}
@@ -360,17 +382,27 @@ export default function AnalysisPage() {
                                 <DollarSign size={16} className="text-primary-400" /> Revenue per Event
                                 {selectedMonth && <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">{selectedMonth}</span>}
                             </h2>
-                            <ResponsiveContainer width="100%" height={240}>
-                                <BarChart data={eventChartData}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
-                                    <XAxis dataKey="name" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                    <Tooltip cursor={{ fill: '#ffffff05' }} contentStyle={{ background: '#141622', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }} />
-                                    <Bar dataKey="revenue" radius={[6, 6, 6, 6]} name="Revenue (£)" barSize={32}>
-                                        {eventChartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
+                            {eventChartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={240}>
+                                    <BarChart data={eventChartData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
+                                        <XAxis dataKey="name" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <Tooltip cursor={{ fill: '#ffffff05' }} contentStyle={{ background: '#141622', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }} />
+                                        <Bar dataKey="revenue" radius={[6, 6, 6, 6]} name={`Revenue (${getCurrencySymbol()})`} barSize={32}>
+                                            {eventChartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex items-center justify-center h-[240px] text-white/40">
+                                    <div className="text-center">
+                                        <BarChart3 size={32} className="mx-auto mb-2 opacity-30" />
+                                        <p className="text-sm">No revenue data available</p>
+                                        {selectedMonth && <p className="text-xs mt-1">for {selectedMonth}</p>}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Top 5 Tickets Sold */}
@@ -379,17 +411,27 @@ export default function AnalysisPage() {
                                 <Ticket size={16} className="text-purple-400" /> Top 5 Events (Tickets Sold)
                                 {selectedMonth && <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">{selectedMonth}</span>}
                             </h2>
-                            <ResponsiveContainer width="100%" height={240}>
-                                <BarChart data={topTicketsData} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" horizontal={false} />
-                                    <XAxis type="number" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                    <YAxis type="category" dataKey="name" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} width={110} />
-                                    <Tooltip cursor={{ fill: '#ffffff05' }} contentStyle={{ background: '#141622', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }} />
-                                    <Bar dataKey="sold" radius={[0, 6, 6, 0]} name="Tickets Sold" barSize={20}>
-                                        {topTicketsData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
+                            {topTicketsData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={240}>
+                                    <BarChart data={topTicketsData} layout="vertical">
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" horizontal={false} />
+                                        <XAxis type="number" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                        <YAxis type="category" dataKey="name" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} width={110} />
+                                        <Tooltip cursor={{ fill: '#ffffff05' }} contentStyle={{ background: '#141622', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }} />
+                                        <Bar dataKey="sold" radius={[0, 6, 6, 0]} name="Tickets Sold" barSize={20}>
+                                            {topTicketsData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex items-center justify-center h-[240px] text-white/40">
+                                    <div className="text-center">
+                                        <Ticket size={32} className="mx-auto mb-2 opacity-30" />
+                                        <p className="text-sm">No ticket sales data available</p>
+                                        {selectedMonth && <p className="text-xs mt-1">for {selectedMonth}</p>}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Earnings Contribution Pie */}
@@ -398,15 +440,25 @@ export default function AnalysisPage() {
                                 <PieChart size={16} className="text-primary-400" /> Earnings Contribution
                                 {selectedMonth && <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">{selectedMonth}</span>}
                             </h2>
-                            <ResponsiveContainer width="100%" height={240}>
-                                <RechartsPie>
-                                    <Pie data={topEarningsData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} dataKey="earnings" nameKey="name" label>
-                                        {topEarningsData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                                    </Pie>
-                                    <Tooltip contentStyle={{ background: '#141622', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }} />
-                                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 11, paddingTop: 20 }} />
-                                </RechartsPie>
-                            </ResponsiveContainer>
+                            {topEarningsData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={240}>
+                                    <RechartsPie>
+                                        <Pie data={topEarningsData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} dataKey="earnings" nameKey="name" label>
+                                            {topEarningsData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                        </Pie>
+                                        <Tooltip contentStyle={{ background: '#141622', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }} />
+                                        <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 11, paddingTop: 20 }} />
+                                    </RechartsPie>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex items-center justify-center h-[240px] text-white/40">
+                                    <div className="text-center">
+                                        <DollarSign size={32} className="mx-auto mb-2 opacity-30" />
+                                        <p className="text-sm">No earnings data available</p>
+                                        {selectedMonth && <p className="text-xs mt-1">for {selectedMonth}</p>}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Event Status Breakdown */}
@@ -448,7 +500,7 @@ export default function AnalysisPage() {
                                     <XAxis dataKey="index" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
                                     <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
                                     <Tooltip contentStyle={{ background: '#141622', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }} />
-                                    <Area type="monotone" dataKey="cumulative" stroke="#10b981" fillOpacity={1} fill="url(#colorCum)" name="Revenue (£)" />
+                                    <Area type="monotone" dataKey="cumulative" stroke="#10b981" fillOpacity={1} fill="url(#colorCum)" name={`Revenue (${getCurrencySymbol()})`} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
@@ -462,7 +514,7 @@ export default function AnalysisPage() {
                             <ResponsiveContainer width="100%" height={220}>
                                 <ScatterChart>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                                    <XAxis type="number" dataKey="x" name="Price" unit="£" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                    <XAxis type="number" dataKey="x" name="Price" unit={getCurrencySymbol()} tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
                                     <YAxis type="number" dataKey="y" name="Volume" unit=" tix" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
                                     <ZAxis range={[60, 400]} />
                                     <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ background: '#141622', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }} />
