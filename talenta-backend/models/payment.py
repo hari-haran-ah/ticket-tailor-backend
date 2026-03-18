@@ -24,6 +24,7 @@ class Payment(Base):
     quantity = Column(Integer, nullable=False)
     unit_amount_cents = Column(Integer, nullable=False)
     total_amount_cents = Column(Integer, nullable=False)
+    platform_fee_cents = Column(Integer, nullable=False, default=0)  # Platform earnings from this payment
     currency = Column(String, nullable=False, default="usd")
 
     customer_email = Column(String, nullable=False)

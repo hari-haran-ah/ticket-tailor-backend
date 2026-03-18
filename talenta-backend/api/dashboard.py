@@ -56,21 +56,23 @@ async def get_dashboard(
 
                 c_events = len(all_events)
 
-                # 2. Count tickets from TicketTailor API instead of Payment records
-                # Get ticket counts directly from TT API data
+                # 2. Count tickets and revenue from TicketTailor API instead of Payment records
                 c_tickets = 0
+                c_revenue = 0.0
                 for ev in all_events:
                     for tt in ev.get("ticket_types", []):
-                        c_tickets += tt.get("quantity_issued", 0) or 0
+                        qty = tt.get("quantity_issued", 0) or 0
+                        price = tt.get("price", 0) / 100.0
+                        c_tickets += qty
+                        c_revenue += qty * price
 
-                # Calculate revenue from actual payments (in USD cents, convert to GBP)
+                # Calculate earnings from actual payments (stored platform_fee_cents)
                 client_payments = db.query(Payment).filter(
                     Payment.client_id == client.id,
                     Payment.status == "complete"
                 ).all()
-                total_revenue_cents = sum(p.total_amount_cents for p in client_payments)
-                c_revenue = total_revenue_cents / 100.0 * 0.79  # Rough USD to GBP conversion
-                c_earnings = c_revenue * float(client.platform_fee) / 100
+                total_platform_earnings_cents = sum(p.platform_fee_cents for p in client_payments)
+                c_earnings = (total_platform_earnings_cents / 100.0) * 0.79
 
                 print(f"INFO: Client {client.name} - Events: {c_events}, Tickets: {c_tickets}, Revenue: £{c_revenue:.2f}")
 

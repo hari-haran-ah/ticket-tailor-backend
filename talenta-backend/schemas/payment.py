@@ -31,6 +31,7 @@ class PaymentOut(BaseModel):
     quantity: int
     unit_amount_cents: int
     total_amount_cents: int
+    platform_fee_cents: int
     currency: str
     customer_email: str
     customer_name: Optional[str]

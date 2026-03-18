@@ -317,6 +317,9 @@ async def create_checkout_session(
         try:
             print(f"INFO: Creating {len(payments_to_create)} payment records for FREE session {session_id}")
             for i, p_data in enumerate(payments_to_create):
+                # Calculate platform fee for this payment (free tickets = $0 fee)
+                payment_fee_cents = 0
+
                 payment = Payment(
                     stripe_session_id=session_id,
                     client_id=client.id,
@@ -329,6 +332,7 @@ async def create_checkout_session(
                     quantity=p_data["quantity"],
                     unit_amount_cents=p_data["unit_amount_cents"],
                     total_amount_cents=p_data["total_amount_cents"],
+                    platform_fee_cents=payment_fee_cents,
                     currency='usd',
                     customer_email=payload.customer_email,
                     customer_name=payload.customer_name,
@@ -468,6 +472,10 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
 
             print(f"INFO: Creating {len(payments_data)} payment records for session {session_id}")
             for i, p_data in enumerate(payments_data):
+                # Calculate platform fee for this payment based on client's platform_fee percentage
+                payment_total_cents = p_data["total_amount_cents"]
+                payment_fee_cents = int(payment_total_cents * (float(client.platform_fee) / 100))
+
                 payment = Payment(
                     stripe_session_id=session_id,
                     client_id=client.id,
@@ -480,6 +488,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                     quantity=p_data["quantity"],
                     unit_amount_cents=p_data["unit_amount_cents"],
                     total_amount_cents=p_data["total_amount_cents"],
+                    platform_fee_cents=payment_fee_cents,
                     currency='usd',
                     customer_email=metadata.get("customer_email"),
                     customer_name=metadata.get("customer_name"),
