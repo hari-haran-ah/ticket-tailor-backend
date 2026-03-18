@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 import {
@@ -60,18 +60,21 @@ export default function CheckoutPage() {
     const [phone, setPhone] = useState('')
     const [checkoutError, setCheckoutError] = useState('')
     const [processing, setProcessing] = useState(false)
+    const submittingRef = useRef(false)  // Additional guard against double submission
 
     // Reset processing state when user returns from external redirect (e.g., Stripe)
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible' && processing) {
                 setProcessing(false)
+                submittingRef.current = false
             }
         }
 
         const handleFocus = () => {
             if (processing) {
                 setProcessing(false)
+                submittingRef.current = false
             }
         }
 
@@ -114,11 +117,19 @@ export default function CheckoutPage() {
 
     const handleCheckout = async (e) => {
         e.preventDefault()
+
+        // Guard against double submission using ref (persists across renders)
+        if (submittingRef.current || processing) {
+            console.log('Checkout already in progress, ignoring duplicate submission')
+            return
+        }
+
         if (!email) {
             setCheckoutError('Please enter your email address.')
             return
         }
 
+        submittingRef.current = true
         setProcessing(true)
         setCheckoutError('')
 
@@ -160,6 +171,7 @@ export default function CheckoutPage() {
                 errMsg = detail.map(d => `${d.loc?.[d.loc.length - 1] || 'Field'}: ${d.msg}`).join(', ');
             }
             setCheckoutError(errMsg);
+            submittingRef.current = false
             setProcessing(false)
         }
     }

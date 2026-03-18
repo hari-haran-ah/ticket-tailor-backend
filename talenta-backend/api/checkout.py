@@ -174,22 +174,18 @@ async def _issue_tt_tickets_and_notify(payments: list, client_api_key: str, db: 
           <td style="padding:8px 14px;border-bottom:1px solid #eee;color:#555;font-size:12px;">Pending TT issuance</td>
         </tr>"""
 
-    # Check if this order contains multiple tickets or is just a single ticket.
-    # We don't want to send this aggregated email AND a single ticket email if it's just 1 ticket total.
-    total_quantity = sum(p.quantity for p in payments)
+    # Send our custom aggregated email regardless of whether it's 1 or more tickets
+    total_amount_cents = sum(p.total_amount_cents for p in payments)
+    amount_usd = total_amount_cents / 100
+    event_name = first.event_name or "Your Event"
 
-    if total_quantity > 1:
-        total_amount_cents = sum(p.total_amount_cents for p in payments)
-        amount_usd = total_amount_cents / 100
-        event_name = first.event_name or "Your Event"
-
-        await _send_confirmation_email(
-            to_email   = buyer_email,
-            buyer_name = buyer_name,
-            event_name = event_name,
-            ticket_rows_html = ticket_rows_html,
-            amount_usd = amount_usd,
-        )
+    await _send_confirmation_email(
+        to_email   = buyer_email,
+        buyer_name = buyer_name,
+        event_name = event_name,
+        ticket_rows_html = ticket_rows_html,
+        amount_usd = amount_usd,
+    )
 
 
 async def _send_confirmation_email(to_email: str, buyer_name: str, event_name: str,
@@ -302,15 +298,47 @@ async def create_checkout_session(
     # 3. Create Stripe Checkout Session OR Instant Free Session
     if total_amount == 0:
         import uuid
-        from datetime import datetime
+        from datetime import datetime, timedelta
+
+        # ── IDEMPOTENCY CHECK: Prevent duplicate free orders ───────────────────────
+        # Check if this exact order was already created in the last 5 minutes
+        # (same customer, same event, same tickets, same quantities)
+        recent_cutoff = datetime.utcnow() - timedelta(minutes=5)
+
+        # Build a signature of the order for duplicate detection
+        ticket_signature = "|".join(sorted([
+            f"{p['ticket_type_id']}:{p['quantity']}"
+            for p in payments_to_create
+        ]))
+
+        recent_duplicate = db.query(Payment).filter(
+            Payment.client_id == client.id,
+            Payment.event_id == payload.event_id,
+            Payment.customer_email == payload.customer_email,
+            Payment.status == "complete",
+            Payment.paid_at >= recent_cutoff
+        ).first()
+
+        if recent_duplicate:
+            # Check if the ticket types and quantities match
+            existing_payments = db.query(Payment).filter(
+                Payment.stripe_session_id == recent_duplicate.stripe_session_id
+            ).all()
+
+            existing_signature = "|".join(sorted([
+                f"{p.ticket_type_id}:{p.quantity}"
+                for p in existing_payments
+            ]))
+
+            if existing_signature == ticket_signature:
+                print(f"INFO: Duplicate free order detected for {payload.customer_email} - returning existing session {recent_duplicate.stripe_session_id}")
+                # Return the existing session instead of creating a duplicate
+                return {
+                    "session_id": recent_duplicate.stripe_session_id,
+                    "url": f"{base_url}/checkout/success?session_id={recent_duplicate.stripe_session_id}"
+                }
+
         session_id = f"free_{uuid.uuid4().hex}"
-
-        # Check if we somehow already processed this exact free session (very unlikely but possible)
-        existing_free_payments = db.query(Payment).filter(Payment.stripe_session_id == session_id).all()
-        if existing_free_payments:
-            print(f"INFO: Free session {session_id} already exists (highly unlikely) — generating new session ID")
-            session_id = f"free_{uuid.uuid4().hex}"  # Generate new ID
-
         created_payments = []
         total_quantity = 0
 
