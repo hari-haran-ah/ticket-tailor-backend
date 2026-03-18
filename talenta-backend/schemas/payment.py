@@ -51,4 +51,6 @@ class PaymentStatsOut(BaseModel):
 class PaginatedPaymentsOut(BaseModel):
     data: List[PaymentOut]
     total_records: int
+    total_pages: int
+    current_page: int
     stats: PaymentStatsOut

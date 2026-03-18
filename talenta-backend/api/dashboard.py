@@ -118,7 +118,7 @@ async def get_all_payments(
     db: Session = Depends(get_db),
     _: Admin = Depends(get_current_admin),
     page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
     client_id: Optional[int] = None
 ):
@@ -150,9 +150,14 @@ async def get_all_payments(
     offset = (page - 1) * limit
     payments = query.order_by(Payment.created_at.desc()).offset(offset).limit(limit).all()
     
+    import math
+    total_pages = math.ceil(total_records / limit) if total_records > 0 else 1
+
     return {
         "data": payments,
         "total_records": total_records,
+        "total_pages": total_pages,
+        "current_page": page,
         "stats": {
             "total_volume_cents": total_volume_cents,
             "successful": successful_count,

@@ -122,7 +122,9 @@ export default function EventDetailsPage() {
     }
 
     if (loading) return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
+        <div className="h-screen flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pb-12">
             {/* Header Skeleton */}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-white/5 pb-7">
                 <div className="space-y-4 flex-1">
@@ -199,6 +201,8 @@ export default function EventDetailsPage() {
                     ))}
                 </div>
             </div>
+                </div>
+            </div>
         </div>
     )
 
@@ -219,9 +223,11 @@ export default function EventDetailsPage() {
     }[event.status] || 'badge-draft'
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-white/5 pb-7">
+        <div className="h-screen flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                <div className="p-8 max-w-7xl mx-auto space-y-8 pb-12">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-white/5 pb-7">
                 <div className="space-y-3">
                     <Link to="/events" className="text-white/30 hover:text-primary-400 flex items-center gap-1.5 text-xs font-medium transition-colors">
                         <ChevronLeft size={14} /> Back to Events
@@ -256,7 +262,7 @@ export default function EventDetailsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="card p-6">
+                    <div className="card p-6 max-h-[800px] overflow-y-auto custom-scrollbar">
                         {editMode ? (
                             <form onSubmit={handleUpdate} className="space-y-5">
                                 <div className="space-y-1.5">
@@ -285,7 +291,7 @@ export default function EventDetailsPage() {
                                 <div className="space-y-1.5">
                                     <label className="label">Description</label>
                                     <textarea
-                                        className="input-field min-h-[180px] resize-none"
+                                        className="input-field min-h-[180px] max-h-[300px] resize-y custom-scrollbar"
                                         value={formData.description}
                                         onChange={e => setFormData({ ...formData, description: e.target.value })}
                                     />
@@ -368,8 +374,12 @@ export default function EventDetailsPage() {
                                         <Info size={12} /> Description
                                     </h3>
                                     <div
-                                        className="description-content max-h-[400px] overflow-y-auto overflow-x-hidden break-words whitespace-pre-wrap pr-3 text-sm text-white/80 leading-relaxed"
-                                        dangerouslySetInnerHTML={{ __html: event.description || '<p class="text-white/30 italic">No description provided.</p>' }}
+                                        className="description-content max-h-[400px] overflow-y-auto overflow-x-hidden break-words text-left pr-2 text-sm text-white/80 leading-relaxed custom-scrollbar whitespace-pre-wrap"
+                                        dangerouslySetInnerHTML={{
+                                            __html: event.description
+                                                ? event.description.replace(/\n/g, '<br>')
+                                                : '<p class="text-white/30 italic">No description provided.</p>'
+                                        }}
                                     />
                                 </div>
 
@@ -408,7 +418,7 @@ export default function EventDetailsPage() {
 
                     {/* Ticket Types */}
                     <div className="card overflow-hidden">
-                        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-gray-900/50 backdrop-blur-sm sticky top-0 z-10">
                             <h3 className="text-base font-semibold text-white flex items-center gap-2">
                                 <Ticket size={16} className="text-primary-400" /> Ticket Types
                             </h3>
@@ -419,9 +429,9 @@ export default function EventDetailsPage() {
                                 <Plus size={13} /> Add Ticket
                             </button>
                         </div>
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar">
                             <table className="w-full text-sm">
-                                <thead>
+                                <thead className="sticky top-0 bg-gray-900/90 backdrop-blur-sm z-10">
                                     <tr className="text-white/30 text-xs font-medium uppercase tracking-wider border-b border-white/5">
                                         <th className="px-6 py-3 text-left">Name</th>
                                         <th className="px-6 py-3 text-left">Group</th>
@@ -473,7 +483,7 @@ export default function EventDetailsPage() {
                 </div>
 
                 {/* Right sidebar stats */}
-                <div className="space-y-4">
+                <div className="space-y-4 h-fit sticky top-8">
                     <StatCard icon={TrendingUp} label="Est. Revenue" value={`£${((event.total_issued_tickets || 0) * (event.ticket_types?.[0]?.price || 0) / 100).toFixed(2)}`} color="blue" />
                     <StatCard icon={Users} label="Total Issued" value={event.total_issued_tickets || 0} color="green" />
                     <StatCard icon={Ticket} label="Ticket Types" value={event.ticket_types?.length || 0} color="slate" />
@@ -501,6 +511,8 @@ export default function EventDetailsPage() {
                 show={toastConfig.show} message={toastConfig.message}
                 onClose={() => setToastConfig({ ...toastConfig, show: false })}
             />
+                </div>
+            </div>
         </div>
     )
 }

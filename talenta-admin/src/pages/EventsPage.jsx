@@ -117,7 +117,7 @@ function CreateEventModal({ isOpen, onClose, client_id, onCreated }) {
                     <button onClick={onClose} className="text-white/30 hover:text-white transition-colors"><X size={20} /></button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+                <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar">
                     {error && (
                         <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl flex items-center gap-2">
                             <AlertCircle size={16} /> {error}
@@ -139,7 +139,7 @@ function CreateEventModal({ isOpen, onClose, client_id, onCreated }) {
                         <div className="space-y-1">
                             <label className="label">Description</label>
                             <textarea
-                                className="input-field min-h-[100px] resize-none"
+                                className="input-field min-h-[100px] max-h-[250px] resize-y custom-scrollbar"
                                 placeholder="A brief description of the event..."
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}

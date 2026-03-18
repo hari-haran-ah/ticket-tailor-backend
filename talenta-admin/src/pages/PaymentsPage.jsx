@@ -8,6 +8,7 @@ export default function PaymentsPage() {
     const [payments, setPayments] = useState([])
     const [stats, setStats] = useState({ total_volume_cents: 0, successful: 0, pending_failed: 0 })
     const [totalRecords, setTotalRecords] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     
@@ -16,7 +17,7 @@ export default function PaymentsPage() {
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [selectedClientId, setSelectedClientId] = useState('')
     const [page, setPage] = useState(1)
-    const [limit] = useState(20)
+    const [limit] = useState(10)
 
     const [clients, setClients] = useState([])
     const [loadingClients, setLoadingClients] = useState(true)
@@ -49,6 +50,7 @@ export default function PaymentsPage() {
             .then(({ data }) => {
                 setPayments(data.data || [])
                 setTotalRecords(data.total_records || 0)
+                setTotalPages(data.total_pages || 0)
                 setStats(data.stats || { total_volume_cents: 0, successful: 0, pending_failed: 0 })
             })
             .catch(() => setError('Failed to load payments data'))
@@ -283,7 +285,7 @@ export default function PaymentsPage() {
                                             <ChevronLeft size={16} />
                                         </button>
                                         
-                                        {Array.from({ length: Math.ceil(totalRecords / limit) }, (_, i) => i + 1).map((p, i, arr) => {
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((p, i, arr) => {
                                             if (p === 1 || p === arr.length || Math.abs(p - page) <= 1) {
                                                 return (
                                                     <button
@@ -304,7 +306,7 @@ export default function PaymentsPage() {
                                         })}
 
                                         <button
-                                            disabled={page === Math.ceil(totalRecords / limit)}
+                                            disabled={page === totalPages || totalPages === 0}
                                             onClick={() => setPage(p => p + 1)}
                                             className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                         >
