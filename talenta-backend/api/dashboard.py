@@ -42,7 +42,7 @@ async def get_dashboard(
     async with httpx.AsyncClient(timeout=15.0) as http:
         for client in clients:
             try:
-                # 1. Fetch events (published, draft, closed)
+                # 1. Fetch events (published, draft, closed) - still from TT for event count
                 headers = _tt_headers(client.tt_api_key)
                 all_events = []
                 seen_event_ids = set()
@@ -53,26 +53,26 @@ async def get_dashboard(
                             if ev.get("id") not in seen_event_ids:
                                 all_events.append(ev)
                                 seen_event_ids.add(ev.get("id"))
-                
+
                 c_events = len(all_events)
 
-                # 2. Fetch all issued tickets (pagination)
-                all_tickets = []
-                after = None
-                while True:
-                    params = {"limit": 100}
-                    if after: params["starting_after"] = after
-                    resp_t = await http.get(f"{settings.TT_BASE_URL}/issued_tickets", headers=headers, params=params)
-                    t_data = resp_t.json().get("data", []) if resp_t.status_code == 200 else []
-                    all_tickets.extend(t_data)
-                    if len(t_data) < 100: break
-                    after = t_data[-1]["id"]
-                
-                c_tickets = len(all_tickets)
+                # 2. Count tickets from TicketTailor API instead of Payment records
+                # Get ticket counts directly from TT API data
+                c_tickets = 0
+                for ev in all_events:
+                    for tt in ev.get("ticket_types", []):
+                        c_tickets += tt.get("quantity_issued", 0) or 0
 
-                # 3. Calculate revenue from listed_price (Derived Revenue)
-                c_revenue = sum(t.get("listed_price", 0) for t in all_tickets) / 100.0
+                # Calculate revenue from actual payments (in USD cents, convert to GBP)
+                client_payments = db.query(Payment).filter(
+                    Payment.client_id == client.id,
+                    Payment.status == "complete"
+                ).all()
+                total_revenue_cents = sum(p.total_amount_cents for p in client_payments)
+                c_revenue = total_revenue_cents / 100.0 * 0.79  # Rough USD to GBP conversion
                 c_earnings = c_revenue * float(client.platform_fee) / 100
+
+                print(f"INFO: Client {client.name} - Events: {c_events}, Tickets: {c_tickets}, Revenue: £{c_revenue:.2f}")
 
                 total_events += c_events
                 total_tickets_sold += c_tickets
@@ -89,7 +89,8 @@ async def get_dashboard(
                     "revenue_gbp": round(c_revenue, 2),
                     "platform_earnings_gbp": round(c_earnings, 2),
                 })
-            except Exception:
+            except Exception as e:
+                print(f"ERROR: Failed to process client {client.name}: {e}")
                 clients_summary.append({
                     "id": client.id,
                     "name": client.name,
@@ -99,7 +100,7 @@ async def get_dashboard(
                     "tickets_sold": 0,
                     "revenue_gbp": 0.0,
                     "platform_earnings_gbp": 0.0,
-                    "error": "Failed to fetch TT data",
+                    "error": "Failed to fetch data",
                 })
 
     return {

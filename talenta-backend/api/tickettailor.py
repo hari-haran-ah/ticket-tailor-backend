@@ -178,10 +178,17 @@ async def list_events(
             if ev.get("id") not in seen_ids:
                 all_data.append(ev)
                 seen_ids.add(ev.get("id"))
-    
+
     # Sort by start date (newest first)
     all_data.sort(key=lambda x: x.get("start", {}).get("iso", ""), reverse=True)
-    
+
+    # Calculate total_issued_tickets for each event from TicketTailor API data
+    for ev in all_data:
+        total_issued = 0
+        for tt in ev.get("ticket_types", []):
+            total_issued += tt.get("quantity_issued", 0) or 0
+        ev["total_issued_tickets"] = total_issued
+
     return {"client_id": client_id, "client_name": client.name, "data": {"data": all_data}}
 
 
@@ -354,6 +361,13 @@ async def get_event(
     """Get a single event detail from TicketTailor."""
     client = _get_client_or_404(client_id, db)
     data = await _tt_get(client.tt_api_key, f"/events/{event_id}")
+
+    # Calculate total_issued_tickets from TicketTailor API data
+    total_issued = 0
+    for tt in data.get("ticket_types", []):
+        total_issued += tt.get("quantity_issued", 0) or 0
+    data["total_issued_tickets"] = total_issued
+
     return {"client_id": client_id, "data": data}
 
 
@@ -569,7 +583,48 @@ async def client_analytics(
     total_events = len(all_events)
     published_events = sum(1 for ev in all_events if ev.get("status") == "published")
 
-    # 2. Fetch all issued tickets with pagination support
+    # 2. Count tickets from TicketTailor API ticket_types (using quantity_issued)
+    # Build per-event breakdown for charts
+    fee_percent = float(client.platform_fee)
+    total_tickets_sold = 0
+    total_revenue = 0.0
+
+    import datetime
+
+    event_map = {}
+
+    for ev in all_events:
+        event_id = ev["id"]
+        event_tickets = 0
+        event_revenue = 0.0
+
+        # Count tickets from ticket_types using quantity_issued
+        for tt in ev.get("ticket_types", []):
+            tt_quantity_issued = tt.get("quantity_issued", 0) or 0
+            tt_price = tt.get("price", 0) / 100.0  # Convert cents to dollars/pounds
+
+            event_tickets += tt_quantity_issued
+            event_revenue += tt_quantity_issued * tt_price
+
+        event_earnings = event_revenue * fee_percent / 100.0
+
+        total_tickets_sold += event_tickets
+        total_revenue += event_revenue
+
+        # Initialize event data
+        event_map[event_id] = {
+            "id": event_id,
+            "name": ev["name"],
+            "status": ev.get("status", "unknown"),
+            "start_iso": ev.get("start", {}).get("iso") or ev.get("start", {}).get("date"),
+            "tickets": event_tickets,
+            "revenue": event_revenue,
+            "earnings": event_earnings,
+            "avg_price": round(event_revenue / event_tickets, 2) if event_tickets > 0 else 0.0,
+            "monthly_breakdown": {}
+        }
+
+    # 3. Fetch issued tickets for monthly breakdown (by ticket creation date)
     all_tickets = []
     after = None
     while True:
@@ -580,71 +635,37 @@ async def client_analytics(
         all_tickets.extend(t_data)
         if len(t_data) < 100: break
         after = t_data[-1]["id"]
-    
-    total_tickets_sold = len(all_tickets)
 
-    # 3. Calculate revenue from issued tickets' listed_price
-    # This captures manual tickets which don't have Order objects
-    total_revenue = sum(t.get("listed_price", 0) for t in all_tickets) / 100.0
-
-    # Build per-event breakdown for charts
-    fee_percent = float(client.platform_fee)
-    event_map = {
-        ev["id"]: {
-            "id": ev["id"],
-            "name": ev["name"],
-            "status": ev.get("status", "unknown"),
-            "start_iso": ev.get("start", {}).get("iso") or ev.get("start", {}).get("date"),
-            "tickets": 0,
-            "revenue": 0.0,
-            "earnings": 0.0,
-            "avg_price": 0.0,
-        }
-        for ev in all_events
-    }
-
-    import datetime
-
+    # Build monthly breakdown from issued tickets (for time-series data)
     for tit in all_tickets:
         eid = tit.get("event_id")
         if eid in event_map:
             price = tit.get("listed_price", 0) / 100.0
             earnings = price * fee_percent / 100.0
-            
-            # Overall stats
-            event_map[eid]["tickets"] += 1
-            event_map[eid]["revenue"] += price
-            event_map[eid]["earnings"] += earnings
-            
+
             # Monthly breakdown (by ticket creation date)
             created_at = tit.get("created_at")
             if created_at:
                 dt = datetime.datetime.utcfromtimestamp(created_at)
                 month_key = dt.strftime("%b %Y") # e.g. "Feb 2026"
-                
-                if "monthly_breakdown" not in event_map[eid]:
-                    event_map[eid]["monthly_breakdown"] = {}
-                
+
                 if month_key not in event_map[eid]["monthly_breakdown"]:
                     event_map[eid]["monthly_breakdown"][month_key] = {"tickets": 0, "revenue": 0.0, "earnings": 0.0}
-                
+
                 mb = event_map[eid]["monthly_breakdown"][month_key]
                 mb["tickets"] += 1
                 mb["revenue"] += price
                 mb["earnings"] += earnings
 
-    # Calculate avg_price per event and format numbers
+    # Format numbers (avg_price already calculated above)
     for ev_data in event_map.values():
-        if ev_data["tickets"] > 0:
-            ev_data["avg_price"] = round(ev_data["revenue"] / ev_data["tickets"], 2)
         ev_data["revenue"] = round(ev_data["revenue"], 2)
         ev_data["earnings"] = round(ev_data["earnings"], 2)
-        
+
         # Format monthly breakdown numbers
-        if "monthly_breakdown" in ev_data:
-            for k, mb in ev_data["monthly_breakdown"].items():
-                mb["revenue"] = round(mb["revenue"], 2)
-                mb["earnings"] = round(mb["earnings"], 2)
+        for k, mb in ev_data.get("monthly_breakdown", {}).items():
+            mb["revenue"] = round(mb["revenue"], 2)
+            mb["earnings"] = round(mb["earnings"], 2)
 
 
     return {

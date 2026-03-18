@@ -61,6 +61,29 @@ export default function CheckoutPage() {
     const [checkoutError, setCheckoutError] = useState('')
     const [processing, setProcessing] = useState(false)
 
+    // Reset processing state when user returns from external redirect (e.g., Stripe)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && processing) {
+                setProcessing(false)
+            }
+        }
+
+        const handleFocus = () => {
+            if (processing) {
+                setProcessing(false)
+            }
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        window.addEventListener('focus', handleFocus)
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [processing])
+
     useEffect(() => {
         if (!eventId || Object.keys(selectedTickets).length === 0) {
             const timer = setTimeout(() => {

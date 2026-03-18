@@ -28,123 +28,12 @@ def get_base_url(request: Request) -> str:
     if origin:
         # Origin might have trailing slash, strip it
         return origin.rstrip("/")
-    return "http://localhost:5173" # fallback
+    return settings.FRONTEND_URL # fallback
 
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-async def send_order_email(payment: Payment, ticket_detail: dict = None):
-    """
-    Sends a professional HTML order confirmation email to the customer.
-    Reads SMTP_EMAIL and SMTP_APP_PASSWORD from settings / .env
-    """
-    SMTP_SERVER = getattr(settings, "SMTP_SERVER", "smtp.gmail.com")
-    SMTP_PORT   = getattr(settings, "SMTP_PORT", 587)
-    SMTP_USER   = getattr(settings, "SMTP_EMAIL", "")
-    SMTP_PASS   = getattr(settings, "SMTP_APP_PASSWORD", "")
-
-    if not SMTP_USER or not SMTP_PASS:
-        print(f"DEBUG: Skipping email — SMTP_EMAIL or SMTP_APP_PASSWORD not set.")
-        return
-
-    if not payment.customer_email:
-        print("DEBUG: No customer email address — skipping email.")
-        return
-
-    event_name  = getattr(payment, 'event_name', 'Your Event')
-    ticket_name = getattr(payment, 'ticket_type_name', 'Ticket')
-    quantity    = getattr(payment, 'quantity', 1)
-    amount_usd  = getattr(payment, 'total_amount_cents', 0) / 100
-    buyer_name  = getattr(payment, 'customer_name', 'Customer') or 'Customer'
-
-    # Optional: barcode / ticket ID from issued TT ticket
-    barcode = ""
-    if ticket_detail:
-        barcode = ticket_detail.get("barcode") or ticket_detail.get("id", "")
-
-    barcode_row = f"""
-        <tr>
-          <td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;font-size:13px;">Ticket ID / Barcode</td>
-          <td style="padding:8px 14px;border-bottom:1px solid #eee;color:#333;font-family:monospace;">{barcode}</td>
-        </tr>""" if barcode else ""
-
-    html_body = f"""
-    <!DOCTYPE html>
-    <html>
-    <head><meta charset="utf-8"></head>
-    <body style="margin:0;padding:0;background:#f4f4f7;font-family:'Segoe UI',Arial,sans-serif;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7;padding:30px 0;">
-        <tr><td align="center">
-          <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);">
-
-            <!-- Header -->
-            <tr>
-              <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:30px 40px;text-align:center;">
-                <h1 style="margin:0;color:#fff;font-size:24px;">🎫 Booking Confirmed!</h1>
-              </td>
-            </tr>
-
-            <!-- Body -->
-            <tr>
-              <td style="padding:30px 40px;">
-                <p style="color:#333;font-size:16px;margin:0 0 8px;">Hi <strong>{buyer_name}</strong>,</p>
-                <p style="color:#555;font-size:15px;line-height:1.6;margin:0 0 24px;">
-                  Thank you for your purchase! Here are your order details:
-                </p>
-                <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
-                  <tr style="background:#f3f4f6;">
-                    <th style="padding:10px 14px;text-align:left;color:#666;font-size:13px;">Field</th>
-                    <th style="padding:10px 14px;text-align:left;color:#666;font-size:13px;">Details</th>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;font-size:13px;">Event</td>
-                    <td style="padding:8px 14px;border-bottom:1px solid #eee;color:#333;font-weight:bold;">{event_name}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:8px 14px;border-bottom:1px solid #eee;color:#666;font-size:13px;">Ticket</td>
-                    <td style="padding:8px 14px;border-bottom:1px solid #eee;color:#333;">{ticket_name} × {quantity}</td>
-                  </tr>{barcode_row}
-                  <tr>
-                    <td style="padding:8px 14px;color:#666;font-size:13px;">Total Paid</td>
-                    <td style="padding:8px 14px;color:#333;font-weight:bold;">${amount_usd:.2f}</td>
-                  </tr>
-                </table>
-                <p style="color:#888;font-size:13px;margin-top:24px;line-height:1.5;">
-                  Please show this email or your ticket barcode at the venue entrance.
-                  If you have any questions, reply to this email.
-                </p>
-              </td>
-            </tr>
-
-            <!-- Footer -->
-            <tr>
-              <td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #eee;">
-                <p style="color:#aaa;font-size:12px;margin:0;">Powered by Talenta Events &bull; This is an automated confirmation</p>
-              </td>
-            </tr>
-
-          </table>
-        </td></tr>
-      </table>
-    </body>
-    </html>
-    """
-
-    msg = MIMEMultipart("alternative")
-    msg["From"]    = f"Talenta Events <{SMTP_USER}>"
-    msg["To"]      = payment.customer_email
-    msg["Subject"] = f"🎫 Booking Confirmed — {event_name}"
-    msg.attach(MIMEText(html_body, "html"))
-
-    try:
-        with smtplib.SMTP(SMTP_SERVER, int(SMTP_PORT)) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.sendmail(SMTP_USER, payment.customer_email, msg.as_string())
-        print(f"INFO: Confirmation email sent to {payment.customer_email}")
-    except Exception as e:
-        print(f"ERROR: Failed to send email to {payment.customer_email}: {e}")
 
 async def _issue_tt_tickets_and_notify(payments: list, client_api_key: str, db: Session, raise_on_error: bool = False):
     """
@@ -182,18 +71,22 @@ async def _issue_tt_tickets_and_notify(payments: list, client_api_key: str, db: 
         if first.customer_phone:
             payload_tt["phone"] = first.customer_phone
 
-        for _ in range(payment.quantity):
+        for ticket_index in range(payment.quantity):
             try:
                 result = await _tt_post(client_api_key, "/issued_tickets", payload_tt)
                 ticket_id = result.get("id", "")
                 barcode   = result.get("barcode") or ticket_id
                 # Use ASCII arrow to avoid UnicodeEncodeError on Windows stdout
-                print(f"INFO: TT issued ticket {ticket_id} -> {buyer_email}")
-                
-                # Update the local payment record with the latest successfully issued TT ticket ID
-                payment.tt_ticket_id = ticket_id
+                print(f"INFO: TT issued ticket {ticket_id} ({ticket_index+1}/{payment.quantity}) -> {buyer_email}")
+
+                # For the first successful ticket, store the ID in the payment record
+                # Note: For quantity > 1, we only store the first ticket ID for reference
+                if payment.tt_ticket_id is None:  # Only set if not already set
+                    payment.tt_ticket_id = ticket_id
+                    print(f"INFO: Set payment {payment.id} tt_ticket_id to first ticket: {ticket_id}")
+
                 success_counts[payment.id] += 1
-                
+
                 issued_ticket_objects.append({
                     "id":               ticket_id,
                     "barcode":          barcode,
@@ -203,12 +96,12 @@ async def _issue_tt_tickets_and_notify(payments: list, client_api_key: str, db: 
                 all_tt_issued = False
                 err_msg = str(e)
                 try:
-                    print(f"WARN: TT ticket issuance failed for {payment.ticket_type_id}: {err_msg}")
+                    print(f"WARN: TT ticket issuance failed for {payment.ticket_type_id} ticket {ticket_index+1}/{payment.quantity}: {err_msg}")
                 except Exception:
                     pass
                 # Save the error to the database so we can show it to the user
                 payment.tt_error = err_msg
-                
+
                 # If we want to strictly abort (e.g., instant free checkout where we MUST have credits), we raise
                 if raise_on_error:
                     raise HTTPException(status_code=400, detail=f"Ticket Tailor issuance failed: {err_msg}")
@@ -281,17 +174,22 @@ async def _issue_tt_tickets_and_notify(payments: list, client_api_key: str, db: 
           <td style="padding:8px 14px;border-bottom:1px solid #eee;color:#555;font-size:12px;">Pending TT issuance</td>
         </tr>"""
 
-    total_amount_cents = sum(p.total_amount_cents for p in payments)
-    amount_usd = total_amount_cents / 100
-    event_name = first.event_name or "Your Event"
+    # Check if this order contains multiple tickets or is just a single ticket.
+    # We don't want to send this aggregated email AND a single ticket email if it's just 1 ticket total.
+    total_quantity = sum(p.quantity for p in payments)
 
-    await _send_confirmation_email(
-        to_email   = buyer_email,
-        buyer_name = buyer_name,
-        event_name = event_name,
-        ticket_rows_html = ticket_rows_html,
-        amount_usd = amount_usd,
-    )
+    if total_quantity > 1:
+        total_amount_cents = sum(p.total_amount_cents for p in payments)
+        amount_usd = total_amount_cents / 100
+        event_name = first.event_name or "Your Event"
+
+        await _send_confirmation_email(
+            to_email   = buyer_email,
+            buyer_name = buyer_name,
+            event_name = event_name,
+            ticket_rows_html = ticket_rows_html,
+            amount_usd = amount_usd,
+        )
 
 
 async def _send_confirmation_email(to_email: str, buyer_name: str, event_name: str,
@@ -309,62 +207,13 @@ async def _send_confirmation_email(to_email: str, buyer_name: str, event_name: s
         print("DEBUG: No recipient email — skipping.")
         return
 
-    html_body = f"""
-    <!DOCTYPE html>
-    <html><head><meta charset="utf-8"></head>
-    <body style="margin:0;padding:0;background:#f4f4f7;font-family:'Segoe UI',Arial,sans-serif;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7;padding:30px 0;">
-        <tr><td align="center">
-          <table width="600" cellpadding="0" cellspacing="0"
-                 style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);">
-
-            <tr>
-              <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:30px 40px;text-align:center;">
-                <h1 style="margin:0;color:#fff;font-size:24px;">🎫 Booking Confirmed!</h1>
-              </td>
-            </tr>
-
-            <tr>
-              <td style="padding:30px 40px;">
-                <p style="color:#333;font-size:16px;margin:0 0 6px;">Hi <strong>{buyer_name}</strong>,</p>
-                <p style="color:#555;font-size:15px;line-height:1.6;margin:0 0 24px;">
-                  Your tickets for <strong>{event_name}</strong> are confirmed!
-                </p>
-
-                <table width="100%" cellpadding="0" cellspacing="0"
-                       style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:20px;">
-                  <tr style="background:#f3f4f6;">
-                    <th style="padding:10px 14px;text-align:left;color:#666;font-size:12px;">#</th>
-                    <th style="padding:10px 14px;text-align:left;color:#666;font-size:12px;">Ticket Type</th>
-                    <th style="padding:10px 14px;text-align:left;color:#666;font-size:12px;">Barcode / ID</th>
-                  </tr>
-                  {ticket_rows_html}
-                </table>
-
-                <p style="color:#555;font-size:14px;margin:0 0 6px;">
-                  💰 Total Paid: <strong>${amount_usd:.2f}</strong>
-                </p>
-
-                <p style="color:#888;font-size:13px;margin-top:20px;line-height:1.5;">
-                  Please present your ticket barcode at the venue entrance for check-in.<br>
-                  Reply to this email if you have any questions.
-                </p>
-              </td>
-            </tr>
-
-            <tr>
-              <td style="background:#f9fafb;padding:16px 40px;text-align:center;border-top:1px solid #eee;">
-                <p style="color:#aaa;font-size:12px;margin:0;">
-                  Powered by Talenta Events &bull; Automated confirmation
-                </p>
-              </td>
-            </tr>
-
-          </table>
-        </td></tr>
-      </table>
-    </body></html>
-    """
+    from templates.email_templates import get_multi_ticket_email_html
+    html_body = get_multi_ticket_email_html(
+        buyer_name=buyer_name,
+        event_name=event_name,
+        ticket_rows_html=ticket_rows_html,
+        amount_usd=amount_usd
+    )
 
     msg = MIMEMultipart("alternative")
     msg["From"]    = f"Talenta Events <{SMTP_USER}>"
@@ -455,43 +304,64 @@ async def create_checkout_session(
         import uuid
         from datetime import datetime
         session_id = f"free_{uuid.uuid4().hex}"
-        
+
+        # Check if we somehow already processed this exact free session (very unlikely but possible)
+        existing_free_payments = db.query(Payment).filter(Payment.stripe_session_id == session_id).all()
+        if existing_free_payments:
+            print(f"INFO: Free session {session_id} already exists (highly unlikely) — generating new session ID")
+            session_id = f"free_{uuid.uuid4().hex}"  # Generate new ID
+
         created_payments = []
-        for p_data in payments_to_create:
-            payment = Payment(
-                stripe_session_id=session_id,
-                client_id=client.id,
-                client_name=client.name,
-                stripe_account_id=client.stripe_account_id,
-                event_id=payload.event_id,
-                event_name=event_data.get("name", "Unknown Event"),
-                ticket_type_id=p_data["ticket_type_id"],
-                ticket_type_name=p_data["ticket_type_name"],
-                quantity=p_data["quantity"],
-                unit_amount_cents=p_data["unit_amount_cents"],
-                total_amount_cents=p_data["total_amount_cents"],
-                currency='usd',
-                customer_email=payload.customer_email,
-                customer_name=payload.customer_name,
-                customer_phone=payload.customer_phone,
-                status="complete",
-                paid_at=datetime.utcnow()
-            )
-            db.add(payment)
-            created_payments.append(payment)
-        db.commit()
-        
-        # Issue TT tickets, reduce inventory as fallback, and send email (for free orders)
-        # We pass raise_on_error=True so if TT fails (e.g. zero credits), the UI gets the error.
+        total_quantity = 0
+
         try:
-            await _issue_tt_tickets_and_notify(created_payments, client.tt_api_key, db, raise_on_error=True)
-        except HTTPException as e:
-            # Clean up the pending payments so they can try again if fixed
-            for p in created_payments:
-                db.delete(p)
+            print(f"INFO: Creating {len(payments_to_create)} payment records for FREE session {session_id}")
+            for i, p_data in enumerate(payments_to_create):
+                payment = Payment(
+                    stripe_session_id=session_id,
+                    client_id=client.id,
+                    client_name=client.name,
+                    stripe_account_id=client.stripe_account_id,
+                    event_id=payload.event_id,
+                    event_name=event_data.get("name", "Unknown Event"),
+                    ticket_type_id=p_data["ticket_type_id"],
+                    ticket_type_name=p_data["ticket_type_name"],
+                    quantity=p_data["quantity"],
+                    unit_amount_cents=p_data["unit_amount_cents"],
+                    total_amount_cents=p_data["total_amount_cents"],
+                    currency='usd',
+                    customer_email=payload.customer_email,
+                    customer_name=payload.customer_name,
+                    customer_phone=payload.customer_phone,
+                    status="complete",
+                    paid_at=datetime.utcnow()
+                )
+                db.add(payment)
+                created_payments.append(payment)
+                total_quantity += payment.quantity
+                print(f"INFO: Created FREE payment record {i+1}/{len(payments_to_create)}: {payment.ticket_type_name} x{payment.quantity}")
+
+            # Commit all free payment records atomically
             db.commit()
-            raise e # re-raise the TT issuance error so the frontend catches it
-        
+            print(f"INFO: Successfully committed {len(created_payments)} FREE payment records with {total_quantity} total tickets for session {session_id}")
+
+            # Issue TT tickets, reduce inventory as fallback, and send email (for free orders)
+            # We pass raise_on_error=True so if TT fails (e.g. zero credits), the UI gets the error.
+            try:
+                await _issue_tt_tickets_and_notify(created_payments, client.tt_api_key, db, raise_on_error=True)
+            except HTTPException as e:
+                # Clean up the pending payments so they can try again if fixed
+                print(f"ERROR: TT issuance failed for free session {session_id}, cleaning up {len(created_payments)} payment records")
+                for p in created_payments:
+                    db.delete(p)
+                db.commit()
+                raise e # re-raise the TT issuance error so the frontend catches it
+
+        except Exception as e:
+            print(f"ERROR: Failed to process free checkout for session {session_id}: {e}")
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Failed to process free checkout: {str(e)}")
+
         return {"session_id": session_id, "url": f"{base_url}/checkout/success?session_id={session_id}"}
 
     # Store payment data in Stripe metadata instead of creating pending records
@@ -557,70 +427,91 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         session = event_stripe["data"]["object"]
         session_id = session["id"]
 
-        # Check if payments already exist (prevent duplicate processing)
-        existing_payments = db.query(Payment).filter(Payment.stripe_session_id == session_id).all()
-        if existing_payments:
-            print(f"INFO: Webhook for session {session_id} already processed — skipping duplicate.")
-            return JSONResponse(content={"status": "already_processed"})
-
-        # Extract payment data from session metadata
-        metadata = session.get("metadata", {})
-        client_id = metadata.get("client_id")
-        payments_data_str = metadata.get("payments_data", "[]")
-
-        if not client_id:
-            print(f"ERROR: No client_id in session metadata for {session_id}")
-            return JSONResponse(content={"status": "error", "message": "Missing client_id in metadata"})
-
+        # Use a database transaction with row-level locking to prevent race conditions
         try:
-            payments_data = json.loads(payments_data_str)
-        except json.JSONDecodeError:
-            print(f"ERROR: Invalid payments_data JSON in session metadata for {session_id}")
-            return JSONResponse(content={"status": "error", "message": "Invalid payments_data in metadata"})
+            # Check if payments already exist (prevent duplicate processing)
+            # Use SELECT FOR UPDATE to lock the query and prevent Race conditions
+            existing_payments = db.query(Payment).filter(
+                Payment.stripe_session_id == session_id
+            ).with_for_update().all()
 
-        client = db.query(Client).filter(Client.id == int(client_id)).first()
-        if not client:
-            print(f"ERROR: Client {client_id} not found for session {session_id}")
-            return JSONResponse(content={"status": "error", "message": "Client not found"})
+            if existing_payments:
+                print(f"INFO: Webhook for session {session_id} already processed ({len(existing_payments)} payments exist) — skipping duplicate.")
+                db.commit()  # Release the lock
+                return JSONResponse(content={"status": "already_processed"})
 
-        # Create payment records now that payment is confirmed
-        created_payments = []
-        for p_data in payments_data:
-            payment = Payment(
-                stripe_session_id=session_id,
-                client_id=client.id,
-                client_name=metadata.get("client_name", client.name),
-                stripe_account_id=metadata.get("stripe_account_id", client.stripe_account_id),
-                event_id=metadata.get("event_id"),
-                event_name=metadata.get("event_name", "Unknown Event"),
-                ticket_type_id=p_data["ticket_type_id"],
-                ticket_type_name=p_data["ticket_type_name"],
-                quantity=p_data["quantity"],
-                unit_amount_cents=p_data["unit_amount_cents"],
-                total_amount_cents=p_data["total_amount_cents"],
-                currency='usd',
-                customer_email=metadata.get("customer_email"),
-                customer_name=metadata.get("customer_name"),
-                customer_phone=metadata.get("customer_phone"),
-                status="complete",
-                stripe_payment_intent_id=session.get("payment_intent"),
-                paid_at=datetime.utcnow()
-            )
+            print(f"INFO: Processing new webhook for session {session_id}")
 
-            # Additional customer info from checkout session
-            customer_details = session.get("customer_details", {})
-            if customer_details and customer_details.get("name"):
-                payment.customer_name = customer_details["name"]
+            # Extract payment data from session metadata
+            metadata = session.get("metadata", {})
+            client_id = metadata.get("client_id")
+            payments_data_str = metadata.get("payments_data", "[]")
 
-            db.add(payment)
-            created_payments.append(payment)
+            if not client_id:
+                print(f"ERROR: No client_id in session metadata for {session_id}")
+                return JSONResponse(content={"status": "error", "message": "Missing client_id in metadata"})
 
-        db.commit()
+            try:
+                payments_data = json.loads(payments_data_str)
+            except json.JSONDecodeError:
+                print(f"ERROR: Invalid payments_data JSON in session metadata for {session_id}")
+                return JSONResponse(content={"status": "error", "message": "Invalid payments_data in metadata"})
 
-        # Issue TT tickets, reduce inventory as fallback, and send email
-        if client and client.tt_api_key:
-            print(f"INFO: Processing ticket issuance for session {session_id}")
-            await _issue_tt_tickets_and_notify(created_payments, client.tt_api_key, db)
+            client = db.query(Client).filter(Client.id == int(client_id)).first()
+            if not client:
+                print(f"ERROR: Client {client_id} not found for session {session_id}")
+                return JSONResponse(content={"status": "error", "message": "Client not found"})
+
+            # Create payment records now that payment is confirmed
+            created_payments = []
+            total_quantity = 0
+
+            print(f"INFO: Creating {len(payments_data)} payment records for session {session_id}")
+            for i, p_data in enumerate(payments_data):
+                payment = Payment(
+                    stripe_session_id=session_id,
+                    client_id=client.id,
+                    client_name=metadata.get("client_name", client.name),
+                    stripe_account_id=metadata.get("stripe_account_id", client.stripe_account_id),
+                    event_id=metadata.get("event_id"),
+                    event_name=metadata.get("event_name", "Unknown Event"),
+                    ticket_type_id=p_data["ticket_type_id"],
+                    ticket_type_name=p_data["ticket_type_name"],
+                    quantity=p_data["quantity"],
+                    unit_amount_cents=p_data["unit_amount_cents"],
+                    total_amount_cents=p_data["total_amount_cents"],
+                    currency='usd',
+                    customer_email=metadata.get("customer_email"),
+                    customer_name=metadata.get("customer_name"),
+                    customer_phone=metadata.get("customer_phone"),
+                    status="complete",
+                    stripe_payment_intent_id=session.get("payment_intent"),
+                    paid_at=datetime.utcnow()
+                )
+
+                # Additional customer info from checkout session
+                customer_details = session.get("customer_details", {})
+                if customer_details and customer_details.get("name"):
+                    payment.customer_name = customer_details["name"]
+
+                db.add(payment)
+                created_payments.append(payment)
+                total_quantity += payment.quantity
+                print(f"INFO: Created payment record {i+1}/{len(payments_data)}: {payment.ticket_type_name} x{payment.quantity}")
+
+            # Commit all payment records atomically
+            db.commit()
+            print(f"INFO: Successfully committed {len(created_payments)} payment records with {total_quantity} total tickets for session {session_id}")
+
+            # Issue TT tickets, reduce inventory as fallback, and send email
+            if client and client.tt_api_key:
+                print(f"INFO: Processing ticket issuance for session {session_id}")
+                await _issue_tt_tickets_and_notify(created_payments, client.tt_api_key, db)
+
+        except Exception as e:
+            print(f"ERROR: Failed to process webhook for session {session_id}: {e}")
+            db.rollback()
+            return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
 
     elif event_stripe["type"] in ("checkout.session.expired", "payment_intent.payment_failed"):
         session_or_intent = event_stripe["data"]["object"]

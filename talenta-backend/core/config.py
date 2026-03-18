@@ -8,30 +8,31 @@ class Settings(BaseSettings):
     # Project Metadata
     PROJECT_NAME: str = "Talenta API"
     VERSION: str = "1.0.0"
-    APP_ENV: str = "dev"  # dev, prod, test
+    APP_ENV: str = "dev"  
 
     # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/talenta_db"
+    DATABASE_URL: str
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 10
 
     # JWT
-    SECRET_KEY: str = "your-super-secret-key-change-in-production"
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # Cookie
-    COOKIE_SECURE: bool = True          # Set True in production (HTTPS)
-    COOKIE_SAMESITE: str = "none"         # "lax" | "strict" | "none"
-    COOKIE_DOMAIN: Optional[str] = None  # Set to your root domain in production
+    COOKIE_SECURE: bool = True          
+    COOKIE_SAMESITE: str = "none"         
+    COOKIE_DOMAIN: Optional[str] = None  
+
+    # Frontend
+    FRONTEND_URL: str
 
     # CORS
     BACKEND_CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
-        "http://localhost:3000",
-        "https://ticket-tailor-backend-7bsz.vercel.app",
-        "https://ticket-tailor-backend.vercel.app",
+        "http://localhost:3000"
     ]
 
 
@@ -45,17 +46,17 @@ class Settings(BaseSettings):
         raise ValueError(v)
 
     # Stripe
-    STRIPE_SECRET_KEY: str = ""
-    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_SECRET_KEY: str
+    STRIPE_WEBHOOK_SECRET: str
 
     # Admin seed credentials
-    ADMIN_EMAIL: str = "hariharan8351@gmail.com"
-    ADMIN_PASSWORD: str = "Bhari007@1"
-    ADMIN_FULL_NAME: str = "Hariharan"
+    ADMIN_EMAIL: str
+    ADMIN_PASSWORD: str
+    ADMIN_FULL_NAME: str = "User Admin"
 
     # SMTP Email settings
-    SMTP_EMAIL: str = ""
-    SMTP_APP_PASSWORD: str = ""
+    SMTP_EMAIL: str
+    SMTP_APP_PASSWORD: str
     SMTP_SERVER: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
     

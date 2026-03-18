@@ -167,48 +167,24 @@ async def list_site_events(
     # Sort by start date (newest first)
     data.sort(key=lambda x: x.get("start", {}).get("iso", ""), reverse=True)
 
-    # Pre-fetch all payment counts in one DB query for efficiency
-    event_ids = [ev["id"] for ev in data]
-    
-    # CRITICAL Deduplication: We only count "manual" sales here (where tt_ticket_id is NULL).
-    # Those with a tt_ticket_id are already included in Ticket Tailor's 'quantity_issued'.
-    all_ev_payments = db.query(
-        Payment.event_id,
-        Payment.ticket_type_id,
-        func.sum(Payment.quantity).label("total_sold")
-    ).filter(
-        Payment.event_id.in_(event_ids),
-        Payment.status == "complete",
-        Payment.tt_ticket_id == None
-    ).group_by(Payment.event_id, Payment.ticket_type_id).all()
-
-    # Build nested map: {event_id: {ticket_type_id: sold_count}}
-    sold_map: dict = {}
-    for p in all_ev_payments:
-        sold_map.setdefault(p.event_id, {})[p.ticket_type_id] = int(p.total_sold)
-
+    # Count tickets directly from TicketTailor API
     for ev in data:
-        ev_id = ev["id"]
         tts = ev.get("ticket_types", [])
         total_sold_for_ev = 0
 
         for tt in tts:
-            local_sold = sold_map.get(ev_id, {}).get(tt["id"], 0)
-            
-            # TT's quantity_issued = Dashboard sales + our API sales
+            # Get sold count from TicketTailor API
             tt_quantity_issued = tt.get("quantity_issued", 0) or 0
-            
-            # Total sold = TT sales (dashboard/api) + Manual local sales (failed API)
-            total_sold = local_sold + tt_quantity_issued
-
-            # tt_remaining = tickets currently for sale in TT
             tt_remaining = tt.get("quantity")
 
+            # Use TicketTailor API data for ticket counts
+            total_sold = tt_quantity_issued
+
             if tt_remaining is not None:
-                # Capacity = remaining + TT_issued + Manual_local
-                original_capacity = tt_remaining + tt_quantity_issued + local_sold
-                tt["quantity"] = original_capacity       # total seats for display
-                tt["quantity_available"] = tt_remaining  # seats still for sale
+                # Calculate total capacity from TT data
+                total_capacity = tt_remaining + tt_quantity_issued
+                tt["quantity"] = total_capacity            # total seats
+                tt["quantity_available"] = tt_remaining    # seats still for sale
             else:
                 tt["quantity_available"] = None  # unlimited
 
@@ -230,47 +206,32 @@ async def get_site_event(
 ):
     """Publicly get single event details with accurate sold/capacity counts."""
     data = await _tt_get(client.tt_api_key, f"/events/{event_id}")
-    
-    # Fetch manual sold counts (where TT ticket issuance failed)
-    # Tickets with tt_ticket_id are already in TT's quantity_issued.
-    payments = db.query(
-        Payment.ticket_type_id, 
-        func.sum(Payment.quantity).label("total_sold")
-    ).filter(
-        Payment.event_id == event_id,
-        Payment.status == "complete",
-        Payment.tt_ticket_id == None
-    ).group_by(Payment.ticket_type_id).all()
-    
-    sold_map = {p.ticket_type_id: int(p.total_sold) for p in payments}
-    
+
+    # Count tickets directly from TicketTailor API
     ticket_types = data.get("ticket_types", [])
     total_sold_event = 0
+
     for tt in ticket_types:
-        # Tickets sold via our Stripe platform (tracked locally, inventory reduced manually in TT)
-        local_sold = sold_map.get(tt["id"], 0)
-
-        # Tickets sold via Ticket Tailor's own system (dashboard, their checkout)
+        # Get sold count from TicketTailor API
         tt_quantity_issued = tt.get("quantity_issued", 0) or 0
-
-        # TT's quantity = REMAINING available pool (reduced by both TT-internal AND our manual calls)
-        # So: original_capacity = remaining + TT_issued + our_local
         tt_remaining = tt.get("quantity")
 
-        total_sold = tt_quantity_issued + local_sold
+        # Use TicketTailor API data for ticket counts
+        total_sold = tt_quantity_issued
 
-        print(f"DEBUG TICKET: id={tt['id']} remaining={tt_remaining} tt_issued={tt_quantity_issued} local_sold={local_sold} total_sold={total_sold}")
+        print(f"DEBUG TICKET: id={tt['id']} remaining={tt_remaining} tt_issued={tt_quantity_issued} total_sold={total_sold}")
 
         if tt_remaining is not None:
-            original_capacity = tt_remaining + tt_quantity_issued + local_sold
-            tt["quantity"] = original_capacity        # total seats (for display)
-            tt["quantity_available"] = tt_remaining   # seats still for sale
+            # Calculate total capacity from TT data
+            total_capacity = tt_remaining + tt_quantity_issued
+            tt["quantity"] = total_capacity            # total seats
+            tt["quantity_available"] = tt_remaining    # seats still for sale
         else:
             tt["quantity_available"] = None   # unlimited
 
         tt["quantity_sold"] = total_sold
         total_sold_event += total_sold
-        
+
     data["total_issued_tickets"] = total_sold_event
     
     return data
