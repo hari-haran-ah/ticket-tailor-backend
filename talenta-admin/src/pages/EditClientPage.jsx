@@ -1,0 +1,200 @@
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import api from '../lib/api'
+import {
+    ChevronLeft, AlertCircle, Users, Globe,
+    Key, DollarSign, Mail, Phone, MapPin
+} from 'lucide-react'
+import Skeleton from '../components/Skeleton'
+
+export default function EditClientPage() {
+    const { clientId } = useParams()
+    const navigate = useNavigate()
+    const [loadingInit, setLoadingInit] = useState(true)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+    const [form, setForm] = useState({
+        name: '', domain_name: '', tt_api_key: '', stripe_account_id: '',
+        platform_fee: '0', contact_email: '', contact_phone: '', address: '', is_active: true
+    })
+
+    useEffect(() => {
+        const fetchClient = async () => {
+            try {
+                const { data } = await api.get('/api/clients')
+                const client = data.find(c => String(c.id) === String(clientId))
+                if (client) {
+                    setForm({
+                        name: client.name || '',
+                        domain_name: client.domain_name || '',
+                        tt_api_key: client.tt_api_key || '',
+                        stripe_account_id: client.stripe_account_id || '',
+                        platform_fee: client.platform_fee?.toString() || '0',
+                        contact_email: client.contact_email || '',
+                        contact_phone: client.contact_phone || '',
+                        address: client.address || '',
+                        is_active: client.is_active !== undefined ? client.is_active : true
+                    })
+                } else {
+                    setError('Client not found')
+                }
+            } catch (err) {
+                setError('Failed to fetch client details')
+            } finally {
+                setLoadingInit(false)
+            }
+        }
+        fetchClient()
+    }, [clientId])
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setLoading(true); setError('')
+
+        if (!form.domain_name.trim().startsWith('http://') && !form.domain_name.trim().startsWith('https://')) {
+            setError('Domain must start with http:// or https://'); setLoading(false); return
+        }
+        if (form.tt_api_key && !form.tt_api_key.startsWith('sk_')) {
+            setError('TT API Key must start with sk_'); setLoading(false); return
+        }
+        if (form.stripe_account_id && !form.stripe_account_id.startsWith('acct_')) {
+            setError('Stripe Account ID must start with acct_'); setLoading(false); return
+        }
+        const fee = parseFloat(form.platform_fee)
+        if (isNaN(fee) || fee < 0 || fee > 100) {
+            setError('Platform fee must be between 0 and 100'); setLoading(false); return
+        }
+        if (form.contact_phone) {
+            const digits = form.contact_phone.replace(/\D/g, '')
+            if (digits.length > 0 && (digits.length < 10 || digits.length > 12)) {
+                setError('Contact phone must contain 10 to 12 numbers'); setLoading(false); return
+            }
+        }
+
+        try {
+            const payload = {
+                ...form,
+                platform_fee: fee,
+                contact_phone: form.contact_phone ? form.contact_phone.replace(/\D/g, '') : null
+            }
+            await api.put(`/api/clients/${clientId}`, payload)
+            navigate('/clients')
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Failed to update client')
+            setLoading(false)
+        }
+    }
+
+    const fields = [
+        { key: 'name', label: 'Client Name', icon: Users, type: 'text', required: true, desc: 'The legal or display name of the client organization.' },
+        { key: 'domain_name', label: 'Domain Name', icon: Globe, type: 'text', required: true, placeholder: 'https://client.yourdomain.com', desc: 'The primary web domain for this client.' },
+        { key: 'tt_api_key', label: 'TicketTailor API Key', icon: Key, type: 'text', required: true, placeholder: 'sk_...', desc: 'Secret API key used to sync events from TicketTailor.' },
+        { key: 'stripe_account_id', label: 'Stripe Account ID', icon: DollarSign, type: 'text', placeholder: 'acct_...', desc: 'Used for Stripe Connect routed payments.' },
+        { key: 'platform_fee', label: 'Platform Fee %', icon: DollarSign, type: 'number', required: true, step: '0.01', min: '0', max: '100', desc: 'Percentage cut taken by the platform per sale.' },
+        { key: 'contact_email', label: 'Contact Email', icon: Mail, type: 'email', desc: 'Primary support or administrative contact email.' },
+        { key: 'contact_phone', label: 'Contact Phone', icon: Phone, type: 'text', desc: 'Primary administrative contact phone number.' },
+        { key: 'address', label: 'Address', icon: MapPin, type: 'text', desc: 'Physical or billing address. Can be omitted if unknown.' },
+    ]
+
+    if (loadingInit) {
+        return (
+            <div className="p-8 space-y-8 max-w-4xl mx-auto animate-fade-in">
+                <Skeleton className="w-32 h-4 mb-6" />
+                <Skeleton className="w-64 h-8" />
+                <div className="card p-8 space-y-8 mt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="space-y-2">
+                                <Skeleton className="w-24 h-4" />
+                                <Skeleton className="w-full h-12" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="p-8 space-y-8 max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-gray-300 dark:border-white/10 pb-6">
+                <div className="space-y-3">
+                    <button onClick={() => navigate('/clients')} className="text-gray-500 dark:text-white/30 hover:text-gray-900 dark:hover:text-white/70 flex items-center gap-1.5 text-xs font-medium transition-colors">
+                        <ChevronLeft size={14} /> Back to Clients
+                    </button>
+                    <div>
+                        <p className="text-gray-600 dark:text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">Edit Client</p>
+                        <h1 className="text-2xl font-bold text-black dark:text-white tracking-tight">Manage Client Details</h1>
+                    </div>
+                </div>
+            </div>
+
+            <div className="card overflow-hidden">
+                <form onSubmit={handleSubmit} className="p-8 space-y-8">
+                    {/* Error Message */}
+                    {error && error !== 'Client not found' && (
+                        <div className="p-4 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-black dark:text-white text-sm rounded-xl flex items-center gap-2">
+                            <AlertCircle size={18} /> {error}
+                        </div>
+                    )}
+
+                    {error === 'Client not found' ? (
+                        <div className="text-center py-12 text-gray-500 dark:text-white/40">
+                            Client not found.
+                        </div>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                {fields.map(({ key, label, icon: Icon, type, required, placeholder, desc }) => (
+                                    <div key={key} className="space-y-1.5">
+                                        <label className="label">
+                                            {label}{required && <span className="text-black dark:text-white ml-1">*</span>}
+                                        </label>
+                                        <div className="relative">
+                                            <Icon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30" />
+                                            <input
+                                                type={type}
+                                                className="input-field pl-10"
+                                                placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+                                                value={form[key]}
+                                                onChange={e => setForm({ ...form, [key]: e.target.value })}
+                                                required={required}
+                                                step={key === 'platform_fee' ? '0.01' : undefined}
+                                                min={key === 'platform_fee' ? '0' : undefined}
+                                                max={key === 'platform_fee' ? '100' : undefined}
+                                            />
+                                        </div>
+                                        {desc && <p className="text-[11px] text-gray-500 dark:text-white/40 pt-0.5">{desc}</p>}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <hr className="border-gray-300 dark:border-white/10" />
+
+                            <div className="flex items-center gap-3 pt-2">
+                                <input
+                                    type="checkbox"
+                                    id="is_active"
+                                    checked={form.is_active}
+                                    onChange={e => setForm({ ...form, is_active: e.target.checked })}
+                                    className="w-5 h-5 rounded border-gray-300 dark:border-white/20 bg-white dark:bg-black accent-black dark:accent-white cursor-pointer"
+                                />
+                                <label htmlFor="is_active" className="text-sm font-medium text-gray-700 dark:text-white/80 cursor-pointer select-none">
+                                    Set client as Active
+                                </label>
+                            </div>
+
+                            <div className="flex justify-end gap-4 pt-6 mt-8 border-t border-gray-300 dark:border-white/10">
+                                <button type="button" onClick={() => navigate('/clients')} className="btn-secondary px-8 py-3">Cancel</button>
+                                <button disabled={loading} className="btn-primary px-10 py-3 text-sm font-bold shadow-xl">
+                                    {loading ? 'Saving Changes...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </form>
+            </div>
+        </div>
+    )
+}

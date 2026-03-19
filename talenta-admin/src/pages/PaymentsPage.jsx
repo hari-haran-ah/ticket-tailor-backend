@@ -11,7 +11,7 @@ export default function PaymentsPage() {
     const [totalPages, setTotalPages] = useState(0)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
-    
+
     // Filters & Pagination
     const [searchTerm, setSearchTerm] = useState('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -75,11 +75,11 @@ export default function PaymentsPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                        <DollarSign className="text-primary-500" />
+                    <h1 className="text-2xl font-bold text-black dark:text-white flex items-center gap-2">
+                        <DollarSign className="text-black dark:text-white" />
                         Payments Overview
                     </h1>
-                    <p className="text-sm text-white/50 mt-1">Monitor all platform transactions</p>
+                    <p className="text-sm text-gray-600 dark:text-white/60 mt-1">Monitor all platform transactions</p>
                 </div>
                 <button onClick={loadData} className="btn-secondary group flex items-center gap-2">
                     <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
@@ -89,14 +89,14 @@ export default function PaymentsPage() {
 
             {/* Client Pill Filter Bar */}
             <div className="space-y-2">
-                <p className="text-white/40 text-xs uppercase tracking-widest font-semibold">Filter by Client</p>
+                <p className="text-gray-500 dark:text-white/50 text-xs uppercase tracking-widest font-semibold">Filter by Client</p>
                 <div className="flex items-center gap-3 flex-wrap">
                     <button
                         onClick={() => setSelectedClientId('')}
                         className={`px-4 py-2.5 rounded-2xl border text-sm font-semibold transition-all duration-200
                             ${!selectedClientId
-                                ? 'bg-primary-600 border-primary-500 text-white shadow-lg shadow-primary-600/25'
-                                : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white'
+                                ? 'bg-black dark:bg-white text-white dark:text-black border-gray-900 dark:border-white shadow-lg'
+                                : 'bg-gray-100 dark:bg-white/5 border-gray-300 dark:border-white/10 text-gray-600 dark:text-white/50 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'
                             }`}
                     >
                         All Clients
@@ -122,16 +122,16 @@ export default function PaymentsPage() {
                 ) : (
                     <>
                         <div className="card p-6">
-                            <div className="text-sm text-white/50 mb-1">Processed Volume</div>
-                            <div className="text-3xl font-black text-white">${totalVolume.toFixed(2)}</div>
+                            <div className="text-sm text-gray-600 dark:text-white/60 mb-1">Processed Volume</div>
+                            <div className="text-3xl font-black text-black dark:text-white">${totalVolume.toFixed(2)}</div>
                         </div>
                         <div className="card p-6">
-                            <div className="text-sm text-white/50 mb-1">Successful</div>
-                            <div className="text-3xl font-black text-white">{stats.successful}</div>
+                            <div className="text-sm text-gray-600 dark:text-white/60 mb-1">Successful</div>
+                            <div className="text-3xl font-black text-black dark:text-white">{stats.successful}</div>
                         </div>
                         <div className="card p-6">
-                            <div className="text-sm text-white/50 mb-1">Pending / Failed</div>
-                            <div className="text-3xl font-black text-white">{stats.pending_failed}</div>
+                            <div className="text-sm text-gray-600 dark:text-white/60 mb-1">Pending / Failed</div>
+                            <div className="text-3xl font-black text-black dark:text-white">{stats.pending_failed}</div>
                         </div>
                     </>
                 )}
@@ -139,19 +139,19 @@ export default function PaymentsPage() {
 
             {/* Table */}
             <div className="card flex flex-col min-h-[400px]">
-                <div className="p-4 border-b border-white/10 flex items-center gap-4">
+                <div className="p-4 border-b border-gray-300 dark:border-white/10 flex items-center gap-4">
                     <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/40" size={16} />
                         <input
                             type="text"
                             placeholder="Search by client, customer email, or event..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-primary-500 transition-colors"
+                            className="w-full bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-black dark:text-white placeholder-gray-500 dark:placeholder-white/40 focus:outline-none focus:border-gray-900 dark:focus:border-white/50 transition-colors"
                         />
                     </div>
                     {totalRecords > 0 && (
-                        <span className="text-xs text-white/40">
+                        <span className="text-xs text-gray-500 dark:text-white/50">
                             {totalRecords} total records
                         </span>
                     )}
@@ -182,16 +182,16 @@ export default function PaymentsPage() {
                             </tbody>
                         </table>
                     ) : error ? (
-                        <div className="flex items-center justify-center h-64 text-red-400">{error}</div>
+                        <div className="flex items-center justify-center h-64 text-black dark:text-white">{error}</div>
                     ) : payments.length === 0 ? (
-                        <div className="flex items-center justify-center h-64 text-white/40">No payments found.</div>
+                        <div className="flex items-center justify-center h-64 text-gray-500 dark:text-white/50">No payments found.</div>
                     ) : (
                         <div className="flex flex-col justify-between h-full">
                             <div>
                                 {/* TABLE — md+ only */}
                                 <table className="hidden md:table w-full text-sm">
                                     <thead>
-                                        <tr className="border-b border-white/5 text-white/40 text-xs uppercase tracking-wider">
+                                        <tr className="border-b border-gray-300 dark:border-white/10 text-gray-500 dark:text-white/50 text-xs uppercase tracking-wider">
                                             <th className="px-6 py-3 text-left">Date</th>
                                             <th className="px-6 py-3 text-left">Client</th>
                                             <th className="px-6 py-3 text-left">Customer</th>
@@ -201,70 +201,70 @@ export default function PaymentsPage() {
                                             <th className="px-6 py-3 text-center">Status</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-white/5">
+                                    <tbody className="divide-y divide-gray-200 dark:divide-white/10">
                                         {payments.map(p => (
-                                            <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2 text-white/70">
-                                                    <CalendarDays size={14} />
-                                                    {new Date(p.created_at).toLocaleDateString()}
-                                                </div>
-                                                <div className="text-[10px] text-white/30 mt-1">{new Date(p.created_at).toLocaleTimeString()}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="font-medium text-white">{p.client_name}</div>
-                                                <div className="text-[10px] font-mono text-white/40 mt-1">{p.stripe_account_id}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-white">{p.customer_email}</div>
-                                                {p.customer_name && <div className="text-xs text-white/50 mt-1">{p.customer_name}</div>}
-                                                {p.customer_phone && <div className="text-xs text-white/50">{p.customer_phone}</div>}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm text-white max-w-[200px] truncate" title={p.event_name}>{p.event_name}</div>
-                                                <div className="text-xs text-white/50 mt-1">{p.quantity} × {p.ticket_type_name}</div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right font-medium text-white">{formatCurrency(p.total_amount_cents, p.currency)}</td>
-                                            <td className="px-6 py-4 text-right font-medium text-green-400">+{formatCurrency(p.platform_fee_cents || 0, p.currency)}</td>
-                                            <td className="px-6 py-4 text-center">
-                                                {p.status === 'complete' ? (
-                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20"><CheckCircle size={12} /> Paid</span>
-                                                ) : p.status === 'pending' ? (
-                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20"><Clock size={12} /> Pending</span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-500 border border-red-500/20"><XCircle size={12} /> Failed</span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
+                                            <tr key={p.id} className="hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2 text-gray-700 dark:text-white/70">
+                                                        <CalendarDays size={14} />
+                                                        {new Date(p.created_at).toLocaleDateString()}
+                                                    </div>
+                                                    <div className="text-[10px] text-gray-500 dark:text-white/40 mt-1">{new Date(p.created_at).toLocaleTimeString()}</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="font-medium text-black dark:text-white">{p.client_name}</div>
+                                                    <div className="text-[10px] font-mono text-gray-500 dark:text-white/50 mt-1">{p.stripe_account_id}</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-black dark:text-white">{p.customer_email}</div>
+                                                    {p.customer_name && <div className="text-xs text-gray-600 dark:text-white/60 mt-1">{p.customer_name}</div>}
+                                                    {p.customer_phone && <div className="text-xs text-gray-600 dark:text-white/60">{p.customer_phone}</div>}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-sm text-black dark:text-white max-w-[200px] truncate" title={p.event_name}>{p.event_name}</div>
+                                                    <div className="text-xs text-gray-600 dark:text-white/60 mt-1">{p.quantity} × {p.ticket_type_name}</div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right font-medium text-black dark:text-white">{formatCurrency(p.total_amount_cents, p.currency)}</td>
+                                                <td className="px-6 py-4 text-right font-medium text-black dark:text-white">+{formatCurrency(p.platform_fee_cents || 0, p.currency)}</td>
+                                                <td className="px-6 py-4 text-center">
+                                                    {p.status === 'complete' ? (
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-black dark:bg-white text-white dark:text-black border border-gray-900 dark:border-white"><CheckCircle size={12} /> Paid</span>
+                                                    ) : p.status === 'pending' ? (
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white/70 border border-gray-300 dark:border-white/20"><Clock size={12} /> Pending</span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-400 dark:bg-white/20 text-white dark:text-white/80 border border-gray-500 dark:border-white/30"><XCircle size={12} /> Failed</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
                                 </table>
                                 {/* CARD LIST — mobile only */}
-                                <div className="md:hidden divide-y divide-white/5">
+                                <div className="md:hidden divide-y divide-gray-200 dark:divide-white/10">
                                     {payments.map(p => (
                                         <div key={p.id} className="p-4 space-y-2">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div>
-                                                <p className="text-white text-sm font-medium truncate max-w-[180px]">{p.event_name}</p>
-                                                <p className="text-white/40 text-xs mt-0.5">{p.quantity} × {p.ticket_type_name}</p>
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div>
+                                                    <p className="text-black dark:text-white text-sm font-medium truncate max-w-[180px]">{p.event_name}</p>
+                                                    <p className="text-gray-500 dark:text-white/50 text-xs mt-0.5">{p.quantity} × {p.ticket_type_name}</p>
+                                                </div>
+                                                <div className="flex-shrink-0 text-right">
+                                                    <p className="text-black dark:text-white font-semibold text-sm">{formatCurrency(p.total_amount_cents, p.currency)}</p>
+                                                    <p className="text-black dark:text-white text-[11px] font-medium mt-0.5">+{formatCurrency(p.platform_fee_cents || 0, p.currency)}</p>
+                                                    {p.status === 'complete' ? (
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-black dark:bg-white text-white dark:text-black border border-gray-900 dark:border-white mt-1"><CheckCircle size={9} /> Paid</span>
+                                                    ) : p.status === 'pending' ? (
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white/70 border border-gray-300 dark:border-white/20 mt-1"><Clock size={9} /> Pending</span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-400 dark:bg-white/20 text-white dark:text-white/80 border border-gray-500 dark:border-white/30 mt-1"><XCircle size={9} /> Failed</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="flex-shrink-0 text-right">
-                                                <p className="text-white font-semibold text-sm">{formatCurrency(p.total_amount_cents, p.currency)}</p>
-                                                <p className="text-green-400 text-[11px] font-medium mt-0.5">+{formatCurrency(p.platform_fee_cents || 0, p.currency)}</p>
-                                                {p.status === 'complete' ? (
-                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-500/10 text-green-400 border border-green-500/20 mt-1"><CheckCircle size={9} /> Paid</span>
-                                                ) : p.status === 'pending' ? (
-                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 mt-1"><Clock size={9} /> Pending</span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-500/10 text-red-500 border border-red-500/20 mt-1"><XCircle size={9} /> Failed</span>
-                                                )}
+                                            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-white/50">
+                                                <span>{p.customer_email}</span>
+                                                <span>{new Date(p.created_at).toLocaleDateString()}</span>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center justify-between text-xs text-white/40">
-                                            <span>{p.customer_email}</span>
-                                            <span>{new Date(p.created_at).toLocaleDateString()}</span>
-                                        </div>
-                                        <div className="text-[10px] text-white/30 font-semibold">{p.client_name}</div>
+                                            <div className="text-[10px] text-gray-500 dark:text-white/50 font-semibold">{p.client_name}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -272,35 +272,34 @@ export default function PaymentsPage() {
 
                             {/* Pagination */}
                             {totalRecords > limit && (
-                                <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-6 py-3 border-t border-white/5 mt-auto">
-                                    <p className="text-white/40 text-xs">
+                                <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-6 py-3 border-t border-gray-300 dark:border-white/10 mt-auto">
+                                    <p className="text-gray-500 dark:text-white/50 text-xs">
                                         Showing {(page - 1) * limit + 1}–{Math.min(page * limit, totalRecords)} of {totalRecords}
                                     </p>
                                     <div className="flex items-center gap-1">
                                         <button
                                             disabled={page === 1}
                                             onClick={() => setPage(p => p - 1)}
-                                            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                            className="p-1.5 rounded-lg text-gray-500 dark:text-white/50 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                         >
                                             <ChevronLeft size={16} />
                                         </button>
-                                        
+
                                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((p, i, arr) => {
                                             if (p === 1 || p === arr.length || Math.abs(p - page) <= 1) {
                                                 return (
                                                     <button
                                                         key={p}
                                                         onClick={() => setPage(p)}
-                                                        className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
-                                                            p === page ? 'bg-primary-600 text-white' : 'text-white/40 hover:text-white hover:bg-white/10'
-                                                        }`}
+                                                        className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${p === page ? 'bg-black dark:bg-white text-white dark:text-black' : 'text-gray-500 dark:text-white/50 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10'
+                                                            }`}
                                                     >
                                                         {p}
                                                     </button>
                                                 )
                                             }
                                             if (p === page - 2 || p === page + 2) {
-                                                return <span key={p} className="text-white/30 text-xs px-1">...</span>
+                                                return <span key={p} className="text-gray-500 dark:text-white/40 text-xs px-1">...</span>
                                             }
                                             return null
                                         })}
@@ -308,7 +307,7 @@ export default function PaymentsPage() {
                                         <button
                                             disabled={page === totalPages || totalPages === 0}
                                             onClick={() => setPage(p => p + 1)}
-                                            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                            className="p-1.5 rounded-lg text-gray-500 dark:text-white/50 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                         >
                                             <ChevronRight size={16} />
                                         </button>

@@ -4,24 +4,39 @@ export default {
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
     ],
+    darkMode: 'class',
     theme: {
         extend: {
             colors: {
-                primary: {
-                    50: '#eff6ff',
-                    100: '#dbeafe',
-                    300: '#93c5fd',
-                    400: '#60a5fa',
-                    500: '#3b82f6',
-                    600: '#2563eb',
-                    700: '#1d4ed8',
-                    900: '#1e3a8a',
+                premium: {
+                    // Backgrounds
+                    'bg-start': '#212121',
+                    'bg-end': '#212121',
+                    'bg-alt': '#171717',
+                    // Surfaces
+                    'surface': '#212121',
+                    'surface-light': '#2f2f2f',
+                    // Borders
+                    'border': '#2f2f2f',
+                    'border-light': '#2f2f2f',
+                    // Text
+                    'text-primary': '#ececec',
+                    'text-secondary': '#b4b4b4',
+                    'text-muted': '#888888',
                 },
-                dark: {
-                    800: '#1e2130',
-                    900: '#141622',
-                    950: '#0d0f1a',
+                light: {
+                    'surface': '#ffffff',
+                    'surface-alt': '#f3f4f6',
                 }
+            },
+            backgroundImage: {
+                'premium-dark': 'linear-gradient(180deg, #212121 0%, #212121 100%)',
+                'premium-surface': 'linear-gradient(180deg, #212121 0%, #212121 100%)',
+            },
+            boxShadow: {
+                'premium': '0 2px 8px rgba(0,0,0,0.4)',
+                'premium-card': '0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08)',
+                'premium-button': '0 2px 6px rgba(0,0,0,0.3)',
             },
             fontFamily: {
                 sans: ['Inter', 'system-ui', 'sans-serif'],

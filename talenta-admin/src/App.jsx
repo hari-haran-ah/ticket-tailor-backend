@@ -1,11 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import ClientsPage from './pages/ClientsPage'
+import NewClientPage from './pages/NewClientPage'
+import EditClientPage from './pages/EditClientPage'
+import ViewClientPage from './pages/ViewClientPage'
 import EventsPage from './pages/EventsPage'
 import EventDetailsPage from './pages/EventDetailsPage'
+import NewEventPage from './pages/NewEventPage'
 import AnalysisPage from './pages/AnalysisPage'
 import PaymentsPage from './pages/PaymentsPage'
 
@@ -14,7 +19,7 @@ function PrivateRoute({ children }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-10 w-10 rounded-full border-b-2 border-primary-500" />
+        <div className="animate-spin h-10 w-10 rounded-full border-b-2 border-black dark:border-white" />
       </div>
     )
   }
@@ -36,9 +41,13 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               <Routes>
-                <Route path="/" element={<DashboardPage />} />
+                <Route path="/" element={<ClientsPage/>} />
                 <Route path="/clients" element={<ClientsPage />} />
+                <Route path="/clients/new" element={<NewClientPage />} />
+                <Route path="/clients/:clientId/edit" element={<EditClientPage />} />
+                <Route path="/clients/:clientId/view" element={<ViewClientPage />} />
                 <Route path="/events/:clientId?" element={<EventsPage />} />
+                <Route path="/events/:clientId/new" element={<NewEventPage />} />
                 <Route path="/events/:clientId/:eventId" element={<EventDetailsPage />} />
                 <Route path="/analysis" element={<AnalysisPage />} />
                 <Route path="/payments" element={<PaymentsPage />} />
@@ -56,7 +65,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ThemeProvider>
+          <AppRoutes />
+        </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   )

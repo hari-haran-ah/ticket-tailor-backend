@@ -79,3 +79,10 @@ class ClientOut(ClientBase):
 
     class Config:
         from_attributes = True
+
+class PaginatedClientOut(BaseModel):
+    items: list[ClientOut]
+    total: int
+    page: int
+    size: int
+    pages: int

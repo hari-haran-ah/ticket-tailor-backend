@@ -4,6 +4,7 @@ import {
     BarChart3, AlertCircle, TrendingUp, Ticket,
     DollarSign, CalendarDays, PieChart, X, RefreshCw
 } from 'lucide-react'
+import { useTheme } from '../context/ThemeContext'
 import Skeleton from '../components/Skeleton'
 import ClientPillBar from '../components/ClientPillBar'
 import {
@@ -12,9 +13,10 @@ import {
     AreaChart, Area, ScatterChart, Scatter, ZAxis
 } from 'recharts'
 
-const COLORS = ['#2563eb', '#3b82f6', '#60a5fa', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#1d4ed8']
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']
 
 export default function AnalysisPage() {
+    const { resolvedTheme } = useTheme()
     const [clients, setClients] = useState([])
     const [selectedClient, setSelectedClient] = useState('')
     const [analytics, setAnalytics] = useState(null)
@@ -29,6 +31,57 @@ export default function AnalysisPage() {
         const currency = analytics?.currency?.toUpperCase() || 'USD'
         const symbols = { USD: '$', GBP: '£', EUR: '€' }
         return symbols[currency] || currency
+    }
+
+    // Theme-aware chart styling
+    const getTooltipStyle = () => {
+        if (resolvedTheme === 'light') {
+            const chartTheme = {
+                grid: '#e5e7eb',
+                text: '#6b7280',
+                tooltipBg: '#ffffff',
+                tooltipBorder: '#d1d5db',
+                areaFill: '#e5e7eb',
+                lineColor: '#000000'
+            }
+            return {
+                contentStyle: {
+                    background: '#ffffff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
+                },
+                itemStyle: { color: '#3b82f6', fontWeight: 600, padding: 0 },
+                labelStyle: { color: '#000000', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }
+            }
+        }
+        // Dark theme styles - Production-grade visibility
+        return {
+            contentStyle: {
+                background: '#212121',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.8)'
+            },
+            itemStyle: { color: '#60a5fa', fontWeight: 600, padding: 0 },
+            labelStyle: { color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }
+        }
+    }
+
+    const getAxisStyles = () => {
+        return resolvedTheme === 'light'
+            ? { fill: '#6b7280', fontSize: 10 }
+            : { fill: '#9ca3af', fontSize: 10 }        // More visible gray for dark theme
+    }
+
+    const getGridStroke = () => {
+        return resolvedTheme === 'light' ? '#d1d5db' : 'rgba(255,255,255,0.1)'  // More visible grid
+    }
+
+    const getCursorFill = () => {
+        return resolvedTheme === 'light' ? '#e5e7eb' : 'rgba(255,255,255,0.08)'   // More visible cursor
     }
 
     useEffect(() => {
@@ -161,10 +214,10 @@ export default function AnalysisPage() {
         <div className="p-8 space-y-8">
 
             {/* Page header */}
-            <div className="flex items-end justify-between border-b border-white/5 pb-6">
+            <div className="flex items-end justify-between border-b border-gray-300 dark:border-white/10 pb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Intelligence Analysis</h1>
-                    <p className="text-white/40 text-sm mt-1">Deep-dive performance metrics per client</p>
+                    <h1 className="text-2xl font-bold text-black dark:text-white tracking-tight">Intelligence Analysis</h1>
+                    <p className="text-gray-600 dark:text-white/50 text-sm mt-1">Deep-dive performance metrics per client</p>
                 </div>
                 <button
                     onClick={() => {
@@ -184,7 +237,7 @@ export default function AnalysisPage() {
 
             {/* ── Client pill bar ── */}
             <div className="space-y-2">
-                <p className="text-white/40 text-xs uppercase tracking-widest font-semibold">Select Client</p>
+                <p className="text-gray-500 dark:text-white/50 text-xs uppercase tracking-widest font-semibold">Select Client</p>
                 <ClientPillBar
                     clients={clients}
                     selectedId={selectedClient}
@@ -195,7 +248,7 @@ export default function AnalysisPage() {
 
             {/* Error */}
             {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl flex items-center gap-2">
+                <div className="p-4 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-black dark:text-white text-sm rounded-xl flex items-center gap-2">
                     <AlertCircle size={16} /> {error}
                 </div>
             )}
@@ -235,13 +288,13 @@ export default function AnalysisPage() {
                         <div className="card p-4">
                             {/* Label row */}
                             <div className="flex items-center justify-between mb-3">
-                                <span className="text-xs font-semibold uppercase tracking-widest text-white/40 flex items-center gap-1.5">
+                                <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-white/50 flex items-center gap-1.5">
                                     <CalendarDays size={13} /> Filter by Month
                                 </span>
                                 {selectedMonth && (
                                     <button
                                         onClick={() => setSelectedMonth(null)}
-                                        className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition-colors"
+                                        className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors"
                                     >
                                         <X size={13} /> Clear filter
                                     </button>
@@ -255,8 +308,8 @@ export default function AnalysisPage() {
                                 <button
                                     onClick={() => setSelectedMonth(null)}
                                     className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border whitespace-nowrap ${!selectedMonth
-                                        ? 'bg-primary-600 border-primary-600 text-white shadow-lg shadow-primary-600/30'
-                                        : 'bg-white/5 border-white/10 text-white/50 hover:text-white hover:bg-white/10'
+                                        ? 'bg-black dark:bg-white text-white dark:text-black border-gray-900 dark:border-white shadow-lg'
+                                        : 'bg-gray-100 dark:bg-white/5 border-gray-300 dark:border-white/10 text-gray-600 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     All Time
@@ -269,12 +322,12 @@ export default function AnalysisPage() {
                                         onClick={() => setSelectedMonth(prev => prev === m.name ? null : m.name)}
                                         title={`${m.events} events · ${m.tickets} tickets · ${getCurrencySymbol()}${m.revenue.toLocaleString()}`}
                                         className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border whitespace-nowrap ${selectedMonth === m.name
-                                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                                            : 'bg-white/5 border-white/10 text-white/50 hover:text-white hover:bg-white/10'
+                                            ? 'bg-black dark:bg-white text-white dark:text-black border-gray-900 dark:border-white shadow-lg'
+                                            : 'bg-gray-100 dark:bg-white/5 border-gray-300 dark:border-white/10 text-gray-600 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10'
                                             }`}
                                     >
                                         {m.name}
-                                        <span className={`ml-1.5 text-[10px] ${selectedMonth === m.name ? 'text-white/70' : 'text-white/25'}`}>
+                                        <span className={`ml-1.5 text-[10px] ${selectedMonth === m.name ? 'text-white/100 dark:text-black/70' : 'text-gray-400 dark:text-white/30'}`}>
                                             {m.events}ev
                                         </span>
                                     </button>
@@ -283,12 +336,12 @@ export default function AnalysisPage() {
 
                             {/* Active filter summary */}
                             {selectedMonth && (
-                                <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap items-center gap-2">
-                                    <span className="text-[11px] text-white/40">Showing:</span>
-                                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                                <div className="mt-3 pt-3 border-t border-gray-300 dark:border-white/10 flex flex-wrap items-center gap-2">
+                                    <span className="text-[11px] text-gray-500 dark:text-white/50">Showing:</span>
+                                    <span className="text-[11px] font-bold text-black dark:text-white bg-gray-200 dark:bg-white/10 border border-gray-300 dark:border-white/20 px-2 py-0.5 rounded-full">
                                         {selectedMonth}
                                     </span>
-                                    <span className="text-[11px] text-white/30">
+                                    <span className="text-[11px] text-gray-600 dark:text-white/40">
                                         {filteredStats.total_events} events · {filteredStats.total_tickets_sold} tickets · {getCurrencySymbol()}{filteredStats.total_revenue.toLocaleString()} revenue
                                     </span>
                                 </div>
@@ -301,34 +354,34 @@ export default function AnalysisPage() {
                     ══════════════════════════════════════════════════════ */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                         {[
-                            { icon: CalendarDays, label: 'Total Events', value: filteredStats.total_events, color: 'bg-primary-600/20 text-primary-400' },
-                            { icon: CalendarDays, label: 'Published', value: filteredStats.published_events, color: 'bg-emerald-500/20 text-emerald-400' },
-                            { icon: Ticket, label: 'Tickets Sold', value: filteredStats.total_tickets_sold, color: 'bg-purple-500/20 text-purple-400' },
-                            { icon: DollarSign, label: 'Gross Revenue', value: `${getCurrencySymbol()}${filteredStats.total_revenue.toLocaleString()}`, color: 'bg-amber-500/20 text-amber-400' },
-                        ].map(({ icon: Icon, label, value, color }) => (
+                            { icon: CalendarDays, label: 'Total Events', value: filteredStats.total_events },
+                            { icon: CalendarDays, label: 'Published', value: filteredStats.published_events },
+                            { icon: Ticket, label: 'Tickets Sold', value: filteredStats.total_tickets_sold },
+                            { icon: DollarSign, label: 'Gross Revenue', value: `${getCurrencySymbol()}${filteredStats.total_revenue.toLocaleString()}` },
+                        ].map(({ icon: Icon, label, value }) => (
                             <div key={label} className="stat-card">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-white/10 text-black dark:text-white border border-gray-300 dark:border-white/10">
                                     <Icon size={18} />
                                 </div>
                                 <div>
                                     <p className="label">{label}</p>
-                                    <p className="text-xl font-bold text-white">{value}</p>
+                                    <p className="text-xl font-bold text-black dark:text-white">{value}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
 
                     {/* Platform earnings highlight */}
-                    <div className="card p-6 bg-gradient-to-r from-primary-600/20 to-transparent">
+                    <div className="card p-6 bg-gray-100 dark:bg-white/5">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-primary-600 rounded-2xl shadow-lg shadow-primary-600/20">
-                                <TrendingUp size={24} className="text-white" />
+                            <div className="p-3 bg-black dark:bg-white rounded-2xl shadow-lg">
+                                <TrendingUp size={24} className="text-white dark:text-black" />
                             </div>
                             <div>
-                                <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-1">
+                                <p className="text-gray-500 dark:text-white/50 text-xs font-semibold uppercase tracking-wider mb-1">
                                     Estimated Net Revenue — {selectedMonth ? selectedMonth : 'All Time'}
                                 </p>
-                                <p className="text-3xl font-bold text-white tracking-tight">
+                                <p className="text-3xl font-bold text-black dark:text-white tracking-tight">
                                     {getCurrencySymbol()}{filteredStats.platform_earnings.toLocaleString()}
                                 </p>
                             </div>
@@ -341,11 +394,11 @@ export default function AnalysisPage() {
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
                         {/* Monthly Revenue Bar — always all-time, highlights selected */}
-                        <div className="card p-6 border-primary-600/20 shadow-xl shadow-primary-600/5 xl:col-span-2">
-                            <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
-                                <BarChart3 size={16} className="text-primary-400" /> Monthly Revenue Performance
+                        <div className="card p-6 border-gray-300 dark:border-white/10 shadow-xl xl:col-span-2">
+                            <h2 className="text-base font-semibold text-black dark:text-white mb-1 flex items-center gap-2">
+                                <BarChart3 size={16} className="text-black dark:text-white" /> Monthly Revenue Performance
                             </h2>
-                            <p className="text-xs text-white/30 mb-5">Click a bar or use the filter above to drill down</p>
+                            <p className="text-xs text-gray-500 dark:text-white/40 mb-5">Click a bar or use the filter above to drill down</p>
                             <ResponsiveContainer width="100%" height={220}>
                                 <BarChart
                                     data={monthlyRevenueData}
@@ -356,12 +409,12 @@ export default function AnalysisPage() {
                                     }}
                                     style={{ cursor: 'pointer' }}
                                 >
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
-                                    <XAxis dataKey="name" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} vertical={false} />
+                                    <XAxis dataKey="name" tick={getAxisStyles()} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ ...getAxisStyles(), fontSize: 11 }} axisLine={false} tickLine={false} />
                                     <Tooltip
-                                        cursor={{ fill: '#ffffff05' }}
-                                        contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }}
+                                        cursor={{ fill: getCursorFill() }}
+                                        {...getTooltipStyle()}
                                     />
                                     <Bar dataKey="revenue" radius={[6, 6, 6, 6]} name={`Revenue (${getCurrencySymbol()})`} barSize={40}>
                                         {monthlyRevenueData.map((entry, index) => (
@@ -378,17 +431,17 @@ export default function AnalysisPage() {
 
                         {/* Revenue per Event */}
                         <div className="card p-6">
-                            <h2 className="text-base font-semibold text-white mb-6 flex items-center gap-2">
-                                <DollarSign size={16} className="text-primary-400" /> Revenue per Event
-                                {selectedMonth && <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">{selectedMonth}</span>}
+                            <h2 className="text-base font-semibold text-black dark:text-white mb-6 flex items-center gap-2">
+                                <DollarSign size={16} className="text-black dark:text-white" /> Revenue per Event
+                                {selectedMonth && <span className="text-[10px] text-black dark:text-white bg-gray-200 dark:bg-white/10 px-2 py-0.5 rounded-full border border-gray-300 dark:border-white/20">{selectedMonth}</span>}
                             </h2>
                             {eventChartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height={240}>
                                     <BarChart data={eventChartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
-                                        <XAxis dataKey="name" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                        <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                        <Tooltip cursor={{ fill: '#ffffff05' }} contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} vertical={false} />
+                                        <XAxis dataKey="name" tick={getAxisStyles()} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ ...getAxisStyles(), fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <Tooltip cursor={{ fill: getCursorFill() }} {...getTooltipStyle()} />
                                         <Bar dataKey="revenue" radius={[6, 6, 6, 6]} name={`Revenue (${getCurrencySymbol()})`} barSize={32}>
                                             {eventChartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                         </Bar>
@@ -407,17 +460,17 @@ export default function AnalysisPage() {
 
                         {/* Top 5 Tickets Sold */}
                         <div className="card p-6">
-                            <h2 className="text-base font-semibold text-white mb-6 flex items-center gap-2">
-                                <Ticket size={16} className="text-purple-400" /> Top 5 Events (Tickets Sold)
-                                {selectedMonth && <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">{selectedMonth}</span>}
+                            <h2 className="text-base font-semibold text-black dark:text-white mb-6 flex items-center gap-2">
+                                <Ticket size={16} className="text-black dark:text-white" /> Top 5 Events (Tickets Sold)
+                                {selectedMonth && <span className="text-[10px] text-black dark:text-white bg-gray-200 dark:bg-white/10 px-2 py-0.5 rounded-full border border-gray-300 dark:border-white/20">{selectedMonth}</span>}
                             </h2>
                             {topTicketsData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height={240}>
                                     <BarChart data={topTicketsData} layout="vertical">
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" horizontal={false} />
-                                        <XAxis type="number" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                        <YAxis type="category" dataKey="name" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} width={110} />
-                                        <Tooltip cursor={{ fill: '#ffffff05' }} contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} horizontal={false} />
+                                        <XAxis type="number" tick={getAxisStyles()} axisLine={false} tickLine={false} />
+                                        <YAxis type="category" dataKey="name" tick={getAxisStyles()} axisLine={false} tickLine={false} width={110} />
+                                        <Tooltip cursor={{ fill: getCursorFill() }} {...getTooltipStyle()} />
                                         <Bar dataKey="sold" radius={[0, 6, 6, 0]} name="Tickets Sold" barSize={20}>
                                             {topTicketsData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                         </Bar>
@@ -436,9 +489,9 @@ export default function AnalysisPage() {
 
                         {/* Earnings Contribution Pie */}
                         <div className="card p-6">
-                            <h2 className="text-base font-semibold text-white mb-6 flex items-center gap-2">
-                                <PieChart size={16} className="text-primary-400" /> Earnings Contribution
-                                {selectedMonth && <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">{selectedMonth}</span>}
+                            <h2 className="text-base font-semibold text-black dark:text-white mb-6 flex items-center gap-2">
+                                <PieChart size={16} className="text-black dark:text-white" /> Earnings Contribution
+                                {selectedMonth && <span className="text-[10px] text-black dark:text-white bg-gray-200 dark:bg-white/10 px-2 py-0.5 rounded-full border border-gray-300 dark:border-white/20">{selectedMonth}</span>}
                             </h2>
                             {topEarningsData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height={240}>
@@ -446,7 +499,7 @@ export default function AnalysisPage() {
                                         <Pie data={topEarningsData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} dataKey="earnings" nameKey="name" label>
                                             {topEarningsData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                         </Pie>
-                                        <Tooltip contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
+                                        <Tooltip {...getTooltipStyle()} />
                                         <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 11, paddingTop: 20 }} />
                                     </RechartsPie>
                                 </ResponsiveContainer>
@@ -463,16 +516,16 @@ export default function AnalysisPage() {
 
                         {/* Event Status Breakdown */}
                         <div className="card p-6">
-                            <h2 className="text-base font-semibold text-white mb-6 flex items-center gap-2">
-                                <PieChart size={16} className="text-amber-400" /> Event Status Breakdown
-                                {selectedMonth && <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">{selectedMonth}</span>}
+                            <h2 className="text-base font-semibold text-black dark:text-white mb-6 flex items-center gap-2">
+                                <PieChart size={16} className="text-black dark:text-white" /> Event Status Breakdown
+                                {selectedMonth && <span className="text-[10px] text-black dark:text-white bg-gray-200 dark:bg-white/10 px-2 py-0.5 rounded-full border border-gray-300 dark:border-white/20">{selectedMonth}</span>}
                             </h2>
                             <ResponsiveContainer width="100%" height={240}>
                                 <RechartsPie>
                                     <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} dataKey="value" nameKey="name" label>
                                         {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                     </Pie>
-                                    <Tooltip contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
+                                    <Tooltip {...getTooltipStyle()} />
                                     <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 11, paddingTop: 20 }} />
                                 </RechartsPie>
                             </ResponsiveContainer>
@@ -480,12 +533,12 @@ export default function AnalysisPage() {
 
                         {/* Growth Momentum */}
                         <div className="card p-6 xl:col-span-2">
-                            <h2 className="text-base font-semibold text-white mb-6 flex items-center gap-2">
-                                <TrendingUp size={16} className="text-emerald-400" />
+                            <h2 className="text-base font-semibold text-black dark:text-white mb-6 flex items-center gap-2">
+                                <TrendingUp size={16} className="text-black dark:text-white" />
                                 Revenue Growth Momentum
                                 {selectedMonth
-                                    ? <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">{selectedMonth}</span>
-                                    : <span className="text-[10px] text-white/30 bg-white/5 px-2 py-0.5 rounded-full">All Time – Cumulative</span>
+                                    ? <span className="text-[10px] text-black dark:text-white bg-gray-200 dark:bg-white/10 px-2 py-0.5 rounded-full border border-gray-300 dark:border-white/20">{selectedMonth}</span>
+                                    : <span className="text-[10px] text-gray-600 dark:text-white/40 bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-full">All Time – Cumulative</span>
                                 }
                             </h2>
                             <ResponsiveContainer width="100%" height={200}>
@@ -496,10 +549,10 @@ export default function AnalysisPage() {
                                             <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
-                                    <XAxis dataKey="index" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                    <Tooltip contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} vertical={false} />
+                                    <XAxis dataKey="index" tick={getAxisStyles()} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ ...getAxisStyles(), fontSize: 11 }} axisLine={false} tickLine={false} />
+                                    <Tooltip {...getTooltipStyle()} />
                                     <Area type="monotone" dataKey="cumulative" stroke="#10b981" fillOpacity={1} fill="url(#colorCum)" name={`Revenue (${getCurrencySymbol()})`} />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -507,17 +560,17 @@ export default function AnalysisPage() {
 
                         {/* Pricing vs Volume Scatter */}
                         <div className="card p-6 xl:col-span-2">
-                            <h2 className="text-base font-semibold text-white mb-6 flex items-center gap-2">
-                                <DollarSign size={16} className="text-amber-400" /> Pricing vs. Volume Correlation
-                                {selectedMonth && <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">{selectedMonth}</span>}
+                            <h2 className="text-base font-semibold text-black dark:text-white mb-6 flex items-center gap-2">
+                                <DollarSign size={16} className="text-black dark:text-white" /> Pricing vs. Volume Correlation
+                                {selectedMonth && <span className="text-[10px] text-black dark:text-white bg-gray-200 dark:bg-white/10 px-2 py-0.5 rounded-full border border-gray-300 dark:border-white/20">{selectedMonth}</span>}
                             </h2>
                             <ResponsiveContainer width="100%" height={220}>
                                 <ScatterChart>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                                    <XAxis type="number" dataKey="x" name="Price" unit={getCurrencySymbol()} tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                    <YAxis type="number" dataKey="y" name="Volume" unit=" tix" tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+                                    <XAxis type="number" dataKey="x" name="Price" unit={getCurrencySymbol()} tick={getAxisStyles()} axisLine={false} tickLine={false} />
+                                    <YAxis type="number" dataKey="y" name="Volume" unit=" tix" tick={getAxisStyles()} axisLine={false} tickLine={false} />
                                     <ZAxis range={[60, 400]} />
-                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ background: '#0d0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} itemStyle={{ color: '#60a5fa', fontWeight: 600, padding: 0 }} labelStyle={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', marginBottom: '8px' }} />
+                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} {...getTooltipStyle()} />
                                     <Scatter name="Events" data={scatterData} fill="#f59e0b">
                                         {scatterData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                     </Scatter>
@@ -531,10 +584,10 @@ export default function AnalysisPage() {
 
             {/* Empty state */}
             {!selectedClient && !loadingClients && (
-                <div className="card py-24 text-center border-dashed border-white/10 bg-transparent">
-                    <BarChart3 size={48} className="mx-auto mb-4 text-white/10" />
-                    <p className="text-white/60 font-medium">No client selected</p>
-                    <p className="text-white/30 text-sm mt-1">Select a client above to view detailed intelligence.</p>
+                <div className="card py-24 text-center border-dashed border-gray-300 dark:border-white/10 bg-transparent">
+                    <BarChart3 size={48} className="mx-auto mb-4 text-gray-200 dark:text-white/10" />
+                    <p className="text-gray-600 dark:text-white/60 font-medium">No client selected</p>
+                    <p className="text-gray-400 dark:text-white/30 text-sm mt-1">Select a client above to view detailed intelligence.</p>
                 </div>
             )}
         </div>

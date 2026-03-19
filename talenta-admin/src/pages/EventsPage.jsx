@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import api from '../lib/api'
 import {
     CalendarDays, AlertCircle, Clock, Plus, Settings, X,
-    Ticket, MapPin, RefreshCw
+    Ticket, MapPin, RefreshCw, Search
 } from 'lucide-react'
 import Skeleton from '../components/Skeleton'
 import ClientPillBar from '../components/ClientPillBar'
@@ -23,16 +23,16 @@ function EventCard({ event, clientId, onManage }) {
     return (
         <div
             onClick={() => navigate(`/events/${clientId}/${event.id}`)}
-            className="card p-5 cursor-pointer hover:border-primary-600/30 transition-all duration-200 space-y-4 group"
+            className="card p-5 cursor-pointer hover:border-gray-400 dark:hover:border-white/30 transition-all duration-200 space-y-4 group"
         >
             <div className="flex items-start justify-between gap-3">
-                <h3 className="text-base font-semibold text-white leading-tight group-hover:text-primary-400 transition-colors line-clamp-2">
+                <h3 className="text-base font-semibold text-black dark:text-white leading-tight group-hover:text-gray-600 dark:group-hover:text-gray-400 transition-colors line-clamp-2">
                     {event.name}
                 </h3>
                 <span className={statusClass}>{status}</span>
             </div>
 
-            <div className="space-y-2 text-xs text-white/40">
+            <div className="space-y-2 text-xs text-gray-500 dark:text-white/50">
                 {event.start && (
                     <div className="flex items-center gap-2">
                         <Clock size={13} />
@@ -51,7 +51,7 @@ function EventCard({ event, clientId, onManage }) {
                 )}
             </div>
 
-            <div className="flex gap-2 pt-3 border-t border-white/5">
+            <div className="flex gap-2 pt-3 border-t border-gray-300 dark:border-white/10">
                 <button
                     onClick={(e) => { e.stopPropagation(); onManage(event) }}
                     className="btn-secondary flex-1 py-2 text-xs"
@@ -66,189 +66,10 @@ function EventCard({ event, clientId, onManage }) {
     )
 }
 
-function CreateEventModal({ isOpen, onClose, client_id, onCreated }) {
-    const navigate = useNavigate()
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState('')
-    const [formData, setFormData] = useState({
-        name: '',
-        description: '',
-        start_date: '',
-        start_time: '09:00:00',
-        end_date: '',
-        end_time: '18:00:00',
-        venue_name: '',
-        postal_code: '',
-        country: 'US',
-        online_event: false,
-        private_event: false,
-        groups: [],
-        tickets: []
-    })
 
-    if (!isOpen) return null
-
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        setLoading(true); setError('')
-        try {
-            const { data } = await api.post(`/api/tt/${client_id}/events`, formData)
-            onCreated()
-            if (data?.data?.id) {
-                navigate(`/events/${client_id}/${data.data.id}`)
-            } else {
-                onClose()
-            }
-        } catch (err) {
-            setError(err.response?.data?.detail || 'Failed to create event')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-dark-950/80 backdrop-blur-sm">
-            <div className="card w-full max-w-2xl overflow-hidden">
-                <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between">
-                    <div>
-                        <p className="text-primary-400 text-xs font-semibold uppercase tracking-widest mb-0.5">New Event</p>
-                        <h2 className="text-lg font-bold text-white">Create Event</h2>
-                    </div>
-                    <button onClick={onClose} className="text-white/30 hover:text-white transition-colors"><X size={20} /></button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar">
-                    {error && (
-                        <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl flex items-center gap-2">
-                            <AlertCircle size={16} /> {error}
-                        </div>
-                    )}
-
-                    <div className="space-y-5">
-                        <div className="space-y-1">
-                            <label className="label">Event Name</label>
-                            <input
-                                required
-                                className="input-field"
-                                placeholder="e.g. Node.js Bootcamp 2026"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="space-y-1">
-                            <label className="label">Description</label>
-                            <textarea
-                                className="input-field min-h-[100px] max-h-[250px] resize-y custom-scrollbar"
-                                placeholder="A brief description of the event..."
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="label">Start Date</label>
-                                <input
-                                    required type="date"
-                                    className="input-field"
-                                    value={formData.start_date}
-                                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="label">Start Time</label>
-                                <input
-                                    required type="time"
-                                    className="input-field"
-                                    value={formData.start_time}
-                                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="label">End Date</label>
-                                <input
-                                    required type="date"
-                                    className="input-field"
-                                    value={formData.end_date}
-                                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="label">End Time</label>
-                                <input
-                                    required type="time"
-                                    className="input-field"
-                                    value={formData.end_time}
-                                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-white/5">
-                            <div className="space-y-1">
-                                <label className="label">Venue</label>
-                                <input
-                                    disabled={formData.online_event}
-                                    className="input-field disabled:opacity-30"
-                                    placeholder="e.g. ExCeL London"
-                                    value={formData.venue_name}
-                                    onChange={(e) => setFormData({ ...formData, venue_name: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="label">Postal Code</label>
-                                <input
-                                    disabled={formData.online_event}
-                                    className="input-field disabled:opacity-30"
-                                    placeholder="e.g. E16 1XL"
-                                    value={formData.postal_code}
-                                    onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="label">Country</label>
-                                <select
-                                    disabled={formData.online_event}
-                                    className="input-field disabled:opacity-30 appearance-none"
-                                    value={formData.country}
-                                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                                >
-                                    <option value="US">United States</option>
-                                    <option value="GB">United Kingdom</option>
-                                    <option value="IN">India</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <input
-                                type="checkbox"
-                                id="online"
-                                checked={formData.online_event}
-                                onChange={(e) => setFormData({ ...formData, online_event: e.target.checked })}
-                                className="w-4 h-4 rounded border-white/20 bg-dark-950 accent-primary-600"
-                            />
-                            <label htmlFor="online" className="text-sm text-white/60 cursor-pointer">Online Event</label>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-                        <button type="button" onClick={onClose} className="btn-secondary px-6">Cancel</button>
-                        <button disabled={loading} className="btn-primary px-8">
-                            {loading ? 'Creating...' : 'Create Event'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    )
-}
 
 export default function EventsPage() {
+    const navigate = useNavigate()
     const { clientId: urlClientId } = useParams()
     const [clients, setClients] = useState([])
     const [selectedClient, setSelectedClient] = useState('')
@@ -256,7 +77,6 @@ export default function EventsPage() {
     const [loadingClients, setLoadingClients] = useState(true)
     const [loadingEvents, setLoadingEvents] = useState(false)
     const [error, setError] = useState('')
-    const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [isManageOpen, setIsManageOpen] = useState(false)
     const [selectedEvent, setSelectedEvent] = useState(null)
 
@@ -286,102 +106,190 @@ export default function EventsPage() {
         }
     }
 
+    // Filter clients for sidebar
+    const [clientSearch, setClientSearch] = useState('')
+    const filteredClients = clients.filter(c => 
+        c.name.toLowerCase().includes(clientSearch.toLowerCase()) || 
+        c.domain_name.toLowerCase().includes(clientSearch.toLowerCase())
+    )
+
     return (
-        <div className="p-8 space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 border-b border-white/5 pb-6">
-                <div>
-                    <p className="text-primary-400 text-xs font-semibold uppercase tracking-widest mb-1">Client Assets</p>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Event Management</h1>
+        <div className="flex flex-col md:flex-row h-full overflow-hidden bg-white dark:bg-[#212121]">
+            
+            {/* ── Desktop Left Sidebar: Clients List ── */}
+            <div className="hidden md:flex flex-col flex-shrink-0 w-72 lg:w-80 border-r border-gray-300 dark:border-white/10 bg-gray-50/50 dark:bg-[#1a1a1a]/50 h-full">
+                <div className="p-5 border-b border-gray-300 dark:border-white/10">
+                    <h2 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-widest">Select Client</h2>
+                    <div className="relative mt-4">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
+                        <input 
+                            type="text" 
+                            placeholder="Search clients..." 
+                            className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-[#212121] border border-gray-300 dark:border-white/10 rounded-lg text-black dark:text-white focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-white/30 transition-shadow"
+                            value={clientSearch}
+                            onChange={(e) => setClientSearch(e.target.value)}
+                        />
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button 
-                        onClick={() => {
-                            setLoadingClients(true);
-                            api.get('/api/clients').then(({ data }) => {
-                                setClients(data.filter(c => c.is_active));
-                                setLoadingClients(false);
-                                if (selectedClient) loadEvents(selectedClient);
-                            });
-                        }} 
-                        className="btn-secondary group flex items-center gap-2"
-                    >
-                        <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
-                        <span className="hidden sm:inline">Refresh</span>
-                    </button>
-                    {selectedClient && (
-                        <button onClick={() => setIsCreateOpen(true)} className="btn-primary flex items-center gap-2">
-                            <Plus size={16} /> Create Event
-                        </button>
+                
+                <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
+                    {loadingClients ? (
+                        Array.from({ length: 5 }).map((_, i) => (
+                            <div key={i} className="p-3 rounded-xl border border-transparent">
+                                <Skeleton className="w-3/4 h-4 mb-2" />
+                                <Skeleton className="w-1/2 h-3" />
+                            </div>
+                        ))
+                    ) : filteredClients.length > 0 ? (
+                        filteredClients.map(c => {
+                            const isSelected = selectedClient === c.id.toString()
+                            return (
+                                <button
+                                    key={c.id}
+                                    onClick={() => { setSelectedClient(c.id.toString()); loadEvents(c.id.toString()); }}
+                                    className={`w-full text-left p-3 rounded-xl flex items-center justify-between transition-all duration-200 border ${
+                                        isSelected 
+                                            ? 'bg-gray-100 dark:bg-white/10 border-gray-200 dark:border-white/10 shadow-sm' 
+                                            : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-white/5 hover:border-gray-200 dark:hover:border-white/10'
+                                    }`}
+                                >
+                                    <div className="flex flex-col overflow-hidden pr-3">
+                                        <span className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                                            {c.name}
+                                        </span>
+                                        <span className="text-[10px] font-mono text-gray-500 dark:text-white/40 truncate mt-0.5">
+                                            {c.domain_name.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                                        </span>
+                                    </div>
+                                    <div className={`px-2 py-1 rounded-md text-[10px] font-bold flex-shrink-0 ${
+                                        isSelected 
+                                            ? 'bg-gray-200 dark:bg-white/20 text-gray-700 dark:text-white' 
+                                            : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/40'
+                                    }`}>
+                                        {c.events !== undefined ? c.events : '-'} Evts
+                                    </div>
+                                </button>
+                            )
+                        })
+                    ) : (
+                        <div className="p-4 text-center text-sm text-gray-500 dark:text-white/40 italic">
+                            {clientSearch ? 'No clients match your search.' : 'No active clients found.'}
+                        </div>
                     )}
                 </div>
             </div>
 
-            {/* ── Client pill bar ── */}
-            <div className="space-y-2">
-                <p className="text-white/40 text-xs uppercase tracking-widest font-semibold">Select Client</p>
-                <ClientPillBar
-                    clients={clients}
-                    selectedId={selectedClient}
-                    onSelect={(id) => { setSelectedClient(id); loadEvents(id) }}
-                    loading={loadingClients}
-                />
-            </div>
+            {/* ── Right Main Area: Events ── */}
+            <div className="flex-1 flex flex-col h-full overflow-hidden">
+                {/* Mobile Client selector */}
+                <div className="md:hidden p-4 border-b border-gray-300 dark:border-white/10 bg-gray-50/50 dark:bg-[#1a1a1a]/50">
+                    <p className="text-gray-500 dark:text-white/50 text-xs uppercase tracking-widest font-semibold mb-2">Select Client</p>
+                    <ClientPillBar
+                        clients={clients}
+                        selectedId={selectedClient}
+                        onSelect={(id) => { setSelectedClient(id); loadEvents(id) }}
+                        loading={loadingClients}
+                    />
+                </div>
 
-            {loadingEvents && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-fade-in">
-                    {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className="card p-5 space-y-4">
-                            <div className="flex items-start justify-between gap-3">
-                                <Skeleton className="w-40 h-5" />
-                                <Skeleton className="w-16 h-5 rounded-full" />
-                            </div>
-                            <div className="space-y-3">
-                                <Skeleton className="w-32 h-3" />
-                                <Skeleton className="w-24 h-3" />
-                                <Skeleton className="w-48 h-3" />
-                            </div>
-                            <div className="flex gap-2 pt-3 border-t border-white/5">
-                                <Skeleton className="h-8 flex-1 rounded-xl" />
-                                <Skeleton className="h-8 flex-1 rounded-xl" />
-                            </div>
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 custom-scrollbar">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 border-b border-gray-300 dark:border-white/10 pb-6">
+                        <div>
+                            <p className="text-gray-600 dark:text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">Client Assets</p>
+                            <h1 className="text-2xl font-bold text-black dark:text-white tracking-tight">Event Management</h1>
                         </div>
-                    ))}
-                </div>
-            )}
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => {
+                                    setLoadingClients(true);
+                                    api.get('/api/clients').then(({ data }) => {
+                                        setClients(data.filter(c => c.is_active));
+                                        setLoadingClients(false);
+                                        if (selectedClient) loadEvents(selectedClient);
+                                    });
+                                }}
+                                className="btn-secondary group flex items-center gap-2"
+                            >
+                                <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                                <span className="hidden sm:inline">Refresh</span>
+                            </button>
+                            {selectedClient && (
+                                <button onClick={() => navigate(`/events/${selectedClient}/new`)} className="btn-primary flex items-center gap-2">
+                                    <Plus size={16} /> Create Event
+                                </button>
+                            )}
+                        </div>
+                    </div>
 
-            {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl flex items-center gap-2">
-                    <AlertCircle size={16} /> {error}
-                </div>
-            )}
+                    {!selectedClient && !loadingClients && (
+                        <div className="card py-24 text-center border-dashed border-gray-300 dark:border-white/20 bg-transparent flex flex-col items-center justify-center">
+                            <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-4 border border-gray-200 dark:border-white/10">
+                                <CalendarDays size={28} className="text-gray-400 dark:text-white/30" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Select a Client</h3>
+                            <p className="text-gray-500 dark:text-white/50 max-w-sm mx-auto text-sm">
+                                Choose a client from the sidebar to view and manage their events, ticket types, and groups.
+                            </p>
+                        </div>
+                    )}
 
-            {!loadingEvents && events.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {events.map(ev => (
-                        <EventCard
-                            key={ev.id}
-                            event={ev}
-                            clientId={selectedClient}
-                            onManage={(e) => { setSelectedEvent(e); setIsManageOpen(true) }}
-                        />
-                    ))}
-                </div>
-            )}
+                    {selectedClient && loadingEvents && (
+                        <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5 animate-in fade-in duration-300">
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="card p-5 space-y-4">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <Skeleton className="w-40 h-5" />
+                                        <Skeleton className="w-16 h-5 rounded-full" />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <Skeleton className="w-32 h-3" />
+                                        <Skeleton className="w-24 h-3" />
+                                        <Skeleton className="w-48 h-3" />
+                                    </div>
+                                    <div className="flex gap-2 pt-3 border-t border-gray-300 dark:border-white/10">
+                                        <Skeleton className="h-8 flex-1 rounded-xl" />
+                                        <Skeleton className="h-8 flex-1 rounded-xl" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
-            {!loadingEvents && selectedClient && events.length === 0 && !error && (
-                <div className="card py-20 text-center border-dashed border-white/10 bg-transparent">
-                    <CalendarDays size={48} className="mx-auto mb-4 text-white/10" />
-                    <p className="text-white/60 font-medium">No events found</p>
-                    <p className="text-white/30 text-sm mt-1">Create your first event to get started.</p>
-                </div>
-            )}
+                    {error && (
+                        <div className="p-4 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-black dark:text-white text-sm rounded-xl flex items-center gap-2">
+                            <AlertCircle size={16} /> {error}
+                        </div>
+                    )}
 
-            <CreateEventModal
-                isOpen={isCreateOpen}
-                onClose={() => setIsCreateOpen(false)}
-                client_id={selectedClient}
-                onCreated={() => loadEvents(selectedClient)}
-            />
+                    {!loadingEvents && events.length > 0 && selectedClient && (
+                        <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5 animate-in fade-in duration-300">
+                            {events.map(ev => (
+                                <EventCard
+                                    key={ev.id}
+                                    event={ev}
+                                    clientId={selectedClient}
+                                    onManage={(e) => { setSelectedEvent(e); setIsManageOpen(true) }}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {!loadingEvents && selectedClient && events.length === 0 && !error && (
+                        <div className="card py-20 text-center border-dashed border-gray-300 dark:border-white/20 bg-transparent animate-in fade-in duration-300">
+                            <CalendarDays size={48} className="mx-auto mb-4 text-gray-300 dark:text-white/20" />
+                            <p className="text-gray-900 dark:text-white font-semibold text-lg">No events found</p>
+                            <p className="text-gray-500 dark:text-white/40 text-sm mt-1">Create your first event for this client to get started.</p>
+                            <button 
+                                onClick={() => navigate(`/events/${selectedClient}/new`)} 
+                                className="mt-6 btn-primary inline-flex items-center gap-2 shadow-lg shadow-black/10 dark:shadow-white/10"
+                            >
+                                <Plus size={16} /> Create Event
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <ManageTicketsModal
                 isOpen={isManageOpen}

@@ -2,72 +2,72 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
     LayoutDashboard, Users, CalendarDays, BarChart3,
-    LogOut, ChevronRight, Zap, DollarSign, Menu, X
+    LogOut, Zap, DollarSign, Menu, X, PanelLeftClose
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
+import ThemeToggle from './ThemeToggle'
 import LogoutModal from './LogoutModal'
 
 const navItems = [
-     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    //{ to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/clients', icon: Users, label: 'Clients' },
     { to: '/events', icon: CalendarDays, label: 'Events' },
-     { to: '/payments', icon: DollarSign, label: 'Payments' },
-     { to: '/analysis', icon: BarChart3, label: 'Analysis' },
+    //{ to: '/payments', icon: DollarSign, label: 'Payments' },
+    //{ to: '/analysis', icon: BarChart3, label: 'Analysis' },
 ]
 
-const MIN_WIDTH = 64
-const MAX_WIDTH = 320
-const SNAP_COLLAPSED = 64
-const SNAP_EXPANDED = 240
+const SIDEBAR_WIDTH_EXPANDED = 240
+const SIDEBAR_WIDTH_COLLAPSED = 72
 
 export default function Layout({ children }) {
     const { admin, logout } = useAuth()
+    const { resolvedTheme } = useTheme()
     const location = useLocation()
-    const [sidebarWidth, setSidebarWidth] = useState(240)
+    const [isCollapsed, setIsCollapsed] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-    const isDragging = useRef(false)
-    const startX = useRef(0)
-    const startWidth = useRef(0)
 
     // Close mobile drawer on route change
     useEffect(() => {
         setMobileOpen(false)
     }, [location.pathname])
 
-    const isCollapsed = sidebarWidth <= 80
-
     const handleLogout = () => {
         setShowLogoutConfirm(false)
         logout()
     }
 
-    // ── Drag-to-resize (desktop only) ────────────────────────────────────────
-    const onMouseDown = useCallback((e) => {
-        e.preventDefault()
-        isDragging.current = true
-        startX.current = e.clientX
-        startWidth.current = sidebarWidth
+    const toggleSidebar = () => setIsCollapsed(!isCollapsed)
 
-        const onMouseMove = (e) => {
-            if (!isDragging.current) return
-            const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth.current + (e.clientX - startX.current)))
-            setSidebarWidth(newWidth)
+    // ── Theme-aware styling helpers ─────────────────────────────────────────
+    const getNavLinkStyles = (isActive) => {
+        if (resolvedTheme === 'light') {
+            return isActive ? {
+                background: '#f3f4f6',
+                border: '1px solid #e5e7eb',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            } : {
+                background: 'transparent',
+                border: '1px solid transparent'
+            }
         }
-
-        const onMouseUp = (e) => {
-            isDragging.current = false
-            const finalWidth = startWidth.current + (e.clientX - startX.current)
-            setSidebarWidth(finalWidth < 130 ? SNAP_COLLAPSED : SNAP_EXPANDED)
-            document.removeEventListener('mousemove', onMouseMove)
-            document.removeEventListener('mouseup', onMouseUp)
+        // Dark theme styles
+        return isActive ? {
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid #2f2f2f',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+        } : {
+            background: 'transparent',
+            border: '1px solid transparent'
         }
+    }
 
-        document.addEventListener('mousemove', onMouseMove)
-        document.addEventListener('mouseup', onMouseUp)
-    }, [sidebarWidth])
-
-    const toggleSidebar = () => setSidebarWidth(isCollapsed ? SNAP_EXPANDED : SNAP_COLLAPSED)
+    const getNavLinkHoverStyles = () => {
+        return resolvedTheme === 'light'
+            ? { background: '#f9fafb' }
+            : { background: 'rgba(255,255,255,0.05)' }
+    }
 
     // ── Shared Nav Links ──────────────────────────────────────────────────────
     const NavLinks = ({ collapsed = false, onClick }) => (
@@ -80,12 +80,27 @@ export default function Layout({ children }) {
                     onClick={onClick}
                     title={collapsed ? label : undefined}
                     className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                        `flex items-center text-sm font-medium transition-all duration-300
+                        ${collapsed 
+                            ? 'w-10 h-10 mx-auto justify-center rounded-xl p-0' 
+                            : 'gap-3 px-3 py-2.5 rounded-lg w-full'}
                         ${isActive
-                            ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20'
-                            : 'text-white/50 hover:text-white hover:bg-white/5'
+                            ? 'text-gray-900 dark:text-white shadow-lg'
+                            : 'text-gray-600 dark:text-premium-text-secondary hover:text-gray-900 dark:hover:text-white'
                         }`
                     }
+                    style={({ isActive }) => getNavLinkStyles(isActive)}
+                    onMouseEnter={(e) => {
+                        if (!e.currentTarget.classList.contains('active')) {
+                            const hoverStyles = getNavLinkHoverStyles()
+                            e.currentTarget.style.background = hoverStyles.background
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (!e.currentTarget.classList.contains('active')) {
+                            e.currentTarget.style.background = 'transparent'
+                        }
+                    }}
                 >
                     <Icon size={18} className="flex-shrink-0" />
                     {!collapsed && <span className="whitespace-nowrap">{label}</span>}
@@ -95,18 +110,18 @@ export default function Layout({ children }) {
     )
 
     const UserFooter = ({ collapsed = false }) => (
-        <div className="px-2 py-4 border-t border-white/5 overflow-hidden">
+        <div className="px-2 py-4 overflow-hidden border-t border-gray-300 dark:border-[#2f2f2f]">
             {!collapsed && (
-                <div className="px-3 py-2 mb-2">
-                    <p className="text-xs font-medium text-white truncate">{admin?.full_name}</p>
-                    <p className="text-xs text-white/40 truncate">{admin?.email}</p>
+                <div className="px-3 py-2 mb-2 flex flex-col items-center sm:items-start text-center sm:text-left">
+                    <p className="text-xs font-medium text-gray-900 dark:text-white truncate w-full">{admin?.full_name}</p>
+                    <p className="text-xs text-gray-600 dark:text-premium-text-secondary truncate w-full">{admin?.email}</p>
                 </div>
             )}
             <button
                 onClick={() => setShowLogoutConfirm(true)}
                 title={collapsed ? 'Logout' : undefined}
-                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium
-                       text-white/50 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                className={`flex items-center text-sm font-medium text-gray-600 dark:text-premium-text-secondary border border-transparent transition-all duration-300 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-[#2f2f2f]/50 dark:hover:border-[#2f2f2f] 
+                ${collapsed ? 'w-10 h-10 mx-auto justify-center rounded-xl p-0' : 'gap-3 px-3 py-2.5 w-full rounded-lg'}`}
             >
                 <LogOut size={18} className="flex-shrink-0" />
                 {!collapsed && 'Logout'}
@@ -115,63 +130,61 @@ export default function Layout({ children }) {
     )
 
     return (
-        <div className="flex h-screen overflow-hidden bg-dark-950 select-none">
+        <div className="flex h-screen overflow-hidden select-none bg-[#ffffff] dark:bg-[#212121]">
 
             {/* ══════════════════════════════════════════
                 DESKTOP Sidebar (md+)
             ══════════════════════════════════════════ */}
             <aside
-                style={{ width: sidebarWidth }}
-                className="hidden md:flex flex-shrink-0 bg-dark-900 border-r border-white/5 flex-col relative transition-none"
+                style={{ width: isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
+                className="hidden md:flex flex-shrink-0 bg-white dark:bg-[#171717] border-r border-gray-300 dark:border-[#2f2f2f] flex-col relative transition-all duration-300 ease-in-out"
+                data-theme="sidebar"
             >
-                {/* Logo */}
-                <div className="flex items-center gap-3 px-4 py-6 border-b border-white/5 overflow-hidden">
-                    <div className="w-8 h-8 bg-primary-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-600/20">
-                        <Zap size={16} className="text-white" fill="currentColor" />
-                    </div>
+                {/* Header Toggle Area */}
+                <div className={`flex items-center px-4 py-6 border-b border-gray-300 dark:border-[#2f2f2f] overflow-hidden min-h-[80px] ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+                    {/* Logo left */}
                     {!isCollapsed && (
-                        <span className="text-lg font-bold text-white tracking-tight whitespace-nowrap">
-                            Talenta
-                        </span>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-[#2f2f2f] border border-gray-300 dark:border-transparent shadow-sm dark:shadow-black/20 flex items-center justify-center flex-shrink-0">
+                                <Zap size={16} className="text-gray-700 dark:text-white" fill="currentColor" />
+                            </div>
+                            <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">
+                                Talenta
+                            </span>
+                        </div>
                     )}
+                    {/* Toggle Button right */}
+                    <button
+                        onClick={toggleSidebar}
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-black hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-[#2f2f2f] transition-colors"
+                        title={isCollapsed ? "Expand sidebar" : "Close sidebar"}
+                    >
+                        <PanelLeftClose size={20} className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
+                    </button>
+                </div>
+
+                {/* Theme Toggle */}
+                <div className={`px-4 py-3 border-b border-gray-300 dark:border-[#2f2f2f] flex ${isCollapsed ? 'justify-center overflow-hidden' : ''}`}>
+                    <ThemeToggle collapsed={isCollapsed} />
                 </div>
 
                 <NavLinks collapsed={isCollapsed} />
                 <UserFooter collapsed={isCollapsed} />
-
-                {/* Resize handle */}
-                <div
-                    onMouseDown={onMouseDown}
-                    onClick={toggleSidebar}
-                    className="absolute top-0 right-0 w-1 h-full cursor-col-resize group z-10"
-                    title="Drag to resize or click to toggle"
-                >
-                    <div className="absolute inset-y-0 right-0 w-px bg-white/5 group-hover:bg-primary-500/50 transition-colors" />
-                    <div className="absolute top-1/2 -translate-y-1/2 right-0 translate-x-1/2 w-5 h-5
-                                    bg-dark-800 border border-white/10 rounded-full flex items-center justify-center
-                                    opacity-0 group-hover:opacity-100 transition-all shadow-xl">
-                        <ChevronRight
-                            size={10}
-                            className={`text-white/60 transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
-                        />
-                    </div>
-                </div>
             </aside>
 
             {/* ══════════════════════════════════════════
                 MOBILE Top Bar (< md)
             ══════════════════════════════════════════ */}
-            <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between
-                            px-4 py-3 bg-dark-900/95 backdrop-blur-xl border-b border-white/5 shadow-lg">
+            <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 shadow-lg bg-white/95 dark:bg-[#171717]/95 backdrop-blur-[10px] border-b border-gray-300 dark:border-[#2f2f2f]">
                 <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-600/20">
-                        <Zap size={14} className="text-white" fill="currentColor" />
+                    <div className="w-7 h-7 rounded-xl bg-gray-100 dark:bg-[#2f2f2f] border border-gray-300 dark:border-transparent shadow-sm dark:shadow-black/20 flex items-center justify-center">
+                        <Zap size={14} className="text-gray-700 dark:text-white" fill="currentColor" />
                     </div>
-                    <span className="text-base font-bold text-white tracking-tight">Talenta</span>
+                    <span className="text-base font-bold text-gray-900 dark:text-white tracking-tight">Talenta</span>
                 </div>
                 <button
                     onClick={() => setMobileOpen(true)}
-                    className="p-2 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                    className="p-2 rounded-lg text-gray-600 dark:text-premium-text-secondary hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-[#2f2f2f] transition-all duration-300"
                 >
                     <Menu size={20} />
                 </button>
@@ -189,29 +202,34 @@ export default function Layout({ children }) {
                     />
 
                     {/* Drawer panel */}
-                    <aside className="relative w-72 flex flex-col bg-dark-900 border-r border-white/10 h-full shadow-2xl animate-in slide-in-from-left duration-300">
+                    <aside className="relative w-72 bg-white dark:bg-[#171717] border-r border-gray-300 dark:border-[#2f2f2f] flex flex-col h-full shadow-2xl animate-in slide-in-from-left duration-300">
                         {/* Header */}
-                        <div className="flex items-center justify-between px-4 py-5 border-b border-white/5">
+                        <div className="flex items-center justify-between px-4 py-5 border-b border-gray-300 dark:border-[#2f2f2f]">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-600/20">
-                                    <Zap size={16} className="text-white" fill="currentColor" />
+                                <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-[#2f2f2f] border border-gray-300 dark:border-transparent shadow-sm dark:shadow-black/20 flex items-center justify-center">
+                                    <Zap size={16} className="text-gray-700 dark:text-white" fill="currentColor" />
                                 </div>
-                                <span className="text-lg font-bold text-white tracking-tight">Talenta</span>
+                                <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">Talenta</span>
                             </div>
                             <button
                                 onClick={() => setMobileOpen(false)}
-                                className="p-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                                className="p-1.5 rounded-lg text-gray-600 dark:text-premium-text-secondary hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-[#2f2f2f] transition-all duration-300"
                             >
                                 <X size={18} />
                             </button>
                         </div>
 
+                        {/* Theme Toggle */}
+                        <div className="px-4 py-3 border-b border-gray-300 dark:border-[#2f2f2f]">
+                            <ThemeToggle />
+                        </div>
+
                         <NavLinks collapsed={false} onClick={() => setMobileOpen(false)} />
 
                         {/* User info */}
-                        <div className="px-4 py-3 mx-2 mb-2 bg-white/5 rounded-xl">
-                            <p className="text-xs font-semibold text-white truncate">{admin?.full_name}</p>
-                            <p className="text-xs text-white/40 truncate mt-0.5">{admin?.email}</p>
+                        <div className="px-4 py-3 mx-2 mb-2 rounded-lg bg-gray-100 dark:bg-[#212121] border border-gray-300 dark:border-[#2f2f2f]">
+                            <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{admin?.full_name}</p>
+                            <p className="text-xs text-gray-600 dark:text-premium-text-secondary truncate mt-0.5">{admin?.email}</p>
                         </div>
 
                         <UserFooter collapsed={false} />

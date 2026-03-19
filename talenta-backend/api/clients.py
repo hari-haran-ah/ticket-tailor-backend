@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from typing import List
 
 from core.deps import get_current_admin
 from db.session import get_db
 from models.admin import Admin
 from models.client import Client
-from schemas.client import ClientCreate, ClientUpdate, ClientOut
+from schemas.client import ClientCreate, ClientUpdate, ClientOut, PaginatedClientOut
 
 router = APIRouter(prefix="/api/clients", tags=["Clients"])
 
@@ -17,6 +18,38 @@ def list_clients(
     _: Admin = Depends(get_current_admin),
 ):
     return db.query(Client).order_by(Client.created_at.desc()).all()
+
+
+@router.get("/paginated", response_model=PaginatedClientOut)
+def list_clients_paginated(
+    page: int = 1,
+    size: int = 5,
+    search: str = "",
+    db: Session = Depends(get_db),
+    _: Admin = Depends(get_current_admin),
+):
+    query = db.query(Client)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                Client.name.ilike(search_term),
+                Client.domain_name.ilike(search_term),
+                Client.contact_email.ilike(search_term)
+            )
+        )
+    
+    total = query.count()
+    items = query.order_by(Client.created_at.desc()).offset((page - 1) * size).limit(size).all()
+    pages = max(1, (total + size - 1) // size)
+    
+    return PaginatedClientOut(
+        items=items,
+        total=total,
+        page=page,
+        size=size,
+        pages=pages
+    )
 
 
 @router.post("", response_model=ClientOut, status_code=status.HTTP_201_CREATED)
