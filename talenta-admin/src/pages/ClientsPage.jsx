@@ -86,7 +86,7 @@ export default function ClientsPage() {
     const SortableHeader = ({ label, field, className }) => {
         const isActive = sortBy === field;
         return (
-            <th className={`px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400 ${className || ''}`}>
+            <th className={`px-4 3xl:px-5 py-3 3xl:py-4 text-left font-medium text-zinc-500 dark:text-zinc-400 text-sm 3xl:text-base ${className || ''}`}>
                 <button
                     onClick={() => {
                         if (isActive) {
@@ -169,20 +169,20 @@ export default function ClientsPage() {
     }
 
     return (
-        <div className="p-4 md:p-6 space-y-4">
+        <div className="p-4 md:p-6 3xl:p-8 space-y-4 3xl:space-y-6">
             {/* Page Title + Actions Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Clients</h1>
-                    <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-0.5">Add and manage clients for this application</p>
+                    <h1 className="text-xl 3xl:text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Clients</h1>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-sm 3xl:text-base mt-0.5">Add and manage clients for this application</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 3xl:gap-3">
                     <div className="relative">
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
                         <input
                             type="text"
                             placeholder="Search clients..."
-                            className="input-field h-9 pl-9 pr-8 w-48"
+                            className="input-field h-9 3xl:h-10 pl-9 pr-8 w-48 3xl:w-64 3xl:text-base"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                         />
@@ -196,7 +196,7 @@ export default function ClientsPage() {
                             </button>
                         )}
                     </div>
-                    <button onClick={() => navigate('/clients/new')} className="btn-primary h-9 flex items-center justify-center gap-1.5 px-4 font-bold">
+                    <button onClick={() => navigate('/clients/new')} className="btn-primary h-9 3xl:h-10 flex items-center justify-center gap-1.5 px-4 3xl:px-5 font-bold 3xl:text-base">
                         <Plus size={16} />
                         New Client
                     </button>
@@ -214,33 +214,33 @@ export default function ClientsPage() {
 
                 {/* TABLE — hidden on mobile */}
                 <div className="hidden md:block overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
+                    <table className="w-full text-sm 3xl:text-base text-left border-collapse whitespace-nowrap">
                         <thead>
                             <tr className="border-b border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white bg-zinc-50/50 dark:bg-zinc-900/20">
-                                <SortableHeader label="Name" field="name" className="min-w-[150px] w-[25%]" />
-                                <SortableHeader label="Domain" field="domain_name" className="min-w-[150px] w-[30%]" />
-                                <SortableHeader label="Platform Fee" field="platform_fee" className="min-w-[140px] w-[20%]" />
-                                <SortableHeader label="Status" field="is_active" className="min-w-[120px] w-[15%]" />
-                                <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400 w-[10%]">Actions</th>
+                                <SortableHeader label="Name" field="name" className="min-w-[150px] 3xl:min-w-[180px] w-[25%]" />
+                                <SortableHeader label="Domain" field="domain_name" className="min-w-[150px] 3xl:min-w-[200px] w-[30%]" />
+                                <SortableHeader label="Platform Fee" field="platform_fee" className="min-w-[140px] 3xl:min-w-[160px] w-[20%]" />
+                                <SortableHeader label="Status" field="is_active" className="min-w-[120px] 3xl:min-w-[140px] w-[15%]" />
+                                <th className="px-4 3xl:px-5 py-3 3xl:py-4 text-left font-medium text-zinc-500 dark:text-zinc-400 text-sm 3xl:text-base w-[10%]">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i} className="border-b border-[#e5e7eb] dark:border-zinc-800/50">
-                                        <td className="px-4 py-3"><Skeleton className="w-28 h-4 rounded" /></td>
-                                        <td className="px-4 py-3"><Skeleton className="w-36 h-4 rounded" /></td>
-                                        <td className="px-4 py-3"><Skeleton className="w-12 h-4 rounded" /></td>
-                                        <td className="px-4 py-3"><Skeleton className="w-16 h-5 rounded-full" /></td>
-                                        <td className="px-4 py-3"><div className="flex justify-start gap-1"><Skeleton className="w-7 h-7 rounded" /><Skeleton className="w-7 h-7 rounded" /></div></td>
+                                        <td className="px-4 3xl:px-5 py-3 3xl:py-4"><Skeleton className="w-28 3xl:w-32 h-4 3xl:h-5 rounded" /></td>
+                                        <td className="px-4 3xl:px-5 py-3 3xl:py-4"><Skeleton className="w-36 3xl:w-44 h-4 3xl:h-5 rounded" /></td>
+                                        <td className="px-4 3xl:px-5 py-3 3xl:py-4"><Skeleton className="w-12 3xl:w-16 h-4 3xl:h-5 rounded" /></td>
+                                        <td className="px-4 3xl:px-5 py-3 3xl:py-4"><Skeleton className="w-16 3xl:w-20 h-5 3xl:h-6 rounded-full" /></td>
+                                        <td className="px-4 3xl:px-5 py-3 3xl:py-4"><div className="flex justify-start gap-1"><Skeleton className="w-7 3xl:w-8 h-7 3xl:h-8 rounded" /><Skeleton className="w-7 3xl:w-8 h-7 3xl:h-8 rounded" /></div></td>
                                     </tr>
                                 ))
                             ) : clients.map(c => (
                                 <tr key={c.id} className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 3xl:px-5 py-3 3xl:py-4">
                                         <span className="font-medium text-zinc-900 dark:text-white">{formatName(c.name)}</span>
                                     </td>
-                                    <td className="px-4 py-3 font-mono text-xs">
+                                    <td className="px-4 3xl:px-5 py-3 3xl:py-4 font-mono text-xs 3xl:text-sm">
                                         <a
                                             href={c.domain_name.startsWith('http') ? c.domain_name : `https://${c.domain_name}`}
                                             target="_blank"
@@ -251,11 +251,11 @@ export default function ClientsPage() {
                                             {c.domain_name}
                                         </a>
                                     </td>
-                                    <td className="px-4 py-3 text-left text-zinc-900 dark:text-zinc-200">{c.platform_fee}%</td>
-                                    <td className="px-4 py-3 text-left">
+                                    <td className="px-4 3xl:px-5 py-3 3xl:py-4 text-left text-zinc-900 dark:text-zinc-200">{c.platform_fee}%</td>
+                                    <td className="px-4 3xl:px-5 py-3 3xl:py-4 text-left">
                                         <button
                                             onClick={() => setToggleTarget(c)}
-                                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium transition-colors border ${c.is_active
+                                            className={`inline-flex items-center gap-1.5 px-2 3xl:px-3 py-0.5 3xl:py-1 rounded text-xs 3xl:text-sm font-medium transition-colors border ${c.is_active
                                                 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20'
                                                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                                                 }`}
@@ -266,11 +266,11 @@ export default function ClientsPage() {
                                             }
                                         </button>
                                     </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center justify-start gap-1">
-                                            <button onClick={() => navigate(`/clients/${c.id}/view`)} className="btn-icon text-zinc-900 dark:text-zinc-200" title="View"><Eye size={14} /></button>
-                                            <button onClick={() => navigate(`/events/${c.id}`)} className="btn-icon text-zinc-900 dark:text-zinc-200" title="Events"><CalendarDays size={14} /></button>
-                                            <button onClick={() => navigate(`/clients/${c.id}/edit`)} className="btn-icon text-zinc-900 dark:text-zinc-200" title="Edit"><Pencil size={14} /></button>
+                                    <td className="px-4 3xl:px-5 py-3 3xl:py-4">
+                                        <div className="flex items-center justify-start gap-1 3xl:gap-2">
+                                            <button onClick={() => navigate(`/clients/${c.id}/view`)} className="btn-icon text-zinc-900 dark:text-zinc-200 3xl:p-2" title="View"><Eye size={14} className="3xl:w-4 3xl:h-4" /></button>
+                                            <button onClick={() => navigate(`/events/${c.id}`)} className="btn-icon text-zinc-900 dark:text-zinc-200 3xl:p-2" title="Events"><CalendarDays size={14} className="3xl:w-4 3xl:h-4" /></button>
+                                            <button onClick={() => navigate(`/clients/${c.id}/edit`)} className="btn-icon text-zinc-900 dark:text-zinc-200 3xl:p-2" title="Edit"><Pencil size={14} className="3xl:w-4 3xl:h-4" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -278,9 +278,9 @@ export default function ClientsPage() {
                         </tbody>
                     </table>
                     {!loading && clients.length === 0 && (
-                        <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
-                            <Users size={32} className="mx-auto mb-2 opacity-40" />
-                            <p className="text-sm">{search ? `No clients match "${search}"` : 'No clients yet'}</p>
+                        <div className="text-center py-12 3xl:py-16 text-zinc-500 dark:text-zinc-400">
+                            <Users size={32} className="mx-auto mb-2 opacity-40 3xl:w-10 3xl:h-10" />
+                            <p className="text-sm 3xl:text-base">{search ? `No clients match "${search}"` : 'No clients yet'}</p>
                         </div>
                     )}
                 </div>
@@ -347,13 +347,13 @@ export default function ClientsPage() {
                 </div>
 
                 {/* Pagination Footer */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t border-zinc-200 dark:border-zinc-800">
-                    <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 3xl:px-6 py-4 3xl:py-5 border-t border-zinc-200 dark:border-zinc-800">
+                    <p className="text-zinc-500 dark:text-zinc-400 text-sm 3xl:text-base">
                         Showing {totalItems === 0 ? 0 : (page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalItems)} of {totalItems} results
                     </p>
                     <div className="flex items-center gap-4 sm:gap-6">
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-zinc-500 dark:text-zinc-400">Rows:</span>
+                        <div className="flex items-center gap-2 3xl:gap-3">
+                            <span className="text-sm 3xl:text-base text-zinc-500 dark:text-zinc-400">Rows:</span>
                             <div
                                 className="relative"
                                 tabIndex={-1}
@@ -366,7 +366,7 @@ export default function ClientsPage() {
                                 <button
                                     type="button"
                                     onClick={() => setPageSizeOpen(!pageSizeOpen)}
-                                    className="flex items-center justify-between gap-1.5 cursor-pointer bg-transparent border border-zinc-200 dark:border-zinc-800 rounded text-sm text-zinc-900 dark:text-zinc-200 py-1 pl-3 pr-2 focus:outline-none hover:border-zinc-300 dark:hover:border-zinc-700 transition min-w-[56px]"
+                                    className="flex items-center justify-between gap-1.5 cursor-pointer bg-transparent border border-zinc-200 dark:border-zinc-800 rounded text-sm 3xl:text-base text-zinc-900 dark:text-zinc-200 py-1 3xl:py-1.5 pl-3 3xl:pl-4 pr-2 3xl:pr-3 focus:outline-none hover:border-zinc-300 dark:hover:border-zinc-700 transition min-w-[56px] 3xl:min-w-[64px]"
                                 >
                                     <span>{pageSize}</span>
                                     <ChevronDown size={14} className="text-zinc-500 dark:text-zinc-400" />
@@ -383,7 +383,7 @@ export default function ClientsPage() {
                                                     setPage(1);
                                                     setPageSizeOpen(false);
                                                 }}
-                                                className={`w-full text-left px-2 py-1.5 text-sm rounded-sm transition-colors ${pageSize === size
+                                                className={`w-full text-left px-2 3xl:px-3 py-1.5 3xl:py-2 text-sm 3xl:text-base rounded-sm transition-colors ${pageSize === size
                                                     ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium'
                                                     : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-[#18181b] hover:text-zinc-900 dark:hover:text-zinc-200'
                                                     }`}
@@ -399,17 +399,17 @@ export default function ClientsPage() {
                             <button
                                 disabled={page === 1}
                                 onClick={() => setPage(p => p - 1)}
-                                className="px-3 py-1 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                className="px-3 3xl:px-4 py-1 3xl:py-1.5 text-sm 3xl:text-base text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                             >
                                 Previous
                             </button>
-                            <button className="min-w-[28px] h-7 px-2 flex items-center justify-center rounded-md text-sm bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900">
+                            <button className="min-w-[28px] 3xl:min-w-[36px] h-7 3xl:h-9 px-2 3xl:px-3 flex items-center justify-center rounded-md text-sm 3xl:text-base bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900">
                                 {page}
                             </button>
                             <button
                                 disabled={page >= totalPages || totalPages === 0}
                                 onClick={() => setPage(p => p + 1)}
-                                className="px-3 py-1 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                className="px-3 3xl:px-4 py-1 3xl:py-1.5 text-sm 3xl:text-base text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                             >
                                 Next
                             </button>
