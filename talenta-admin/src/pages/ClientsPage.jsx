@@ -83,10 +83,10 @@ export default function ClientsPage() {
     const [sortOrder, setSortOrder] = useState('desc')
     const [sortBy, setSortBy] = useState('created_at')
 
-    const SortableHeader = ({ label, field }) => {
+    const SortableHeader = ({ label, field, className }) => {
         const isActive = sortBy === field;
         return (
-            <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400">
+            <th className={`px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400 ${className || ''}`}>
                 <button 
                     onClick={() => {
                         if (isActive) {
@@ -197,9 +197,6 @@ export default function ClientsPage() {
                             </button>
                         )}
                     </div>
-                    <button onClick={load} className="flex items-center justify-center w-9 h-9 rounded-md text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors border border-zinc-300 dark:border-zinc-800 dark:bg-[#0a0a0a]" title="Refresh">
-                        <RefreshCw size={16} />
-                    </button>
                     <button onClick={() => navigate('/clients/new')} className="btn-primary h-9 flex items-center justify-center gap-1.5 px-4 font-bold">
                         <Plus size={16} />
                         New Client
@@ -221,11 +218,11 @@ export default function ClientsPage() {
                     <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
                         <thead>
                             <tr className="border-b border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white bg-zinc-50/50 dark:bg-zinc-900/20">
-                                <SortableHeader label="Name" field="name" />
-                                <SortableHeader label="Domain" field="domain_name" />
-                                <SortableHeader label="Fee" field="platform_fee" />
-                                <SortableHeader label="Status" field="is_active" />
-                                <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400">Actions</th>
+                                <SortableHeader label="Name" field="name" className="min-w-[150px] w-[25%]" />
+                                <SortableHeader label="Domain" field="domain_name" className="min-w-[150px] w-[30%]" />
+                                <SortableHeader label="Platform Fee" field="platform_fee" className="min-w-[140px] w-[20%]" />
+                                <SortableHeader label="Status" field="is_active" className="min-w-[120px] w-[15%]" />
+                                <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400 w-[10%]">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -243,9 +240,6 @@ export default function ClientsPage() {
                                     <tr key={c.id} className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors">
                                         <td className="px-4 py-3">
                                             <span className="font-medium text-zinc-900 dark:text-white">{formatName(c.name)}</span>
-                                            {c.contact_email && (
-                                                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{c.contact_email}</p>
-                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-zinc-900 dark:text-zinc-200 font-mono text-xs">{c.domain_name}</td>
                                         <td className="px-4 py-3 text-left text-zinc-900 dark:text-zinc-200">{c.platform_fee}%</td>

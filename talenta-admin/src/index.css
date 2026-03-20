@@ -9,16 +9,16 @@
 ══════════════════════════════════════════════════════════════ */
 @layer base {
   :root {
-    /* Page */
-    --background: 0 0% 97%;              /* #f7f7f7 */
+    /* Page - dimmed for eye comfort */
+    --background: 240 3% 90%;              /* #e8e8ea - dimmed */
     --foreground: 220 13% 10%;           /* #111827 */
 
-    /* Cards / Surfaces */
-    --card: 0 0% 100%;                   /* #ffffff */
+    /* Cards / Surfaces - dimmed */
+    --card: 240 3% 94%;                   /* #f0f0f2 - dimmed */
     --card-foreground: 220 13% 10%;      /* #111827 */
 
-    /* Popover */
-    --popover: 0 0% 100%;
+    /* Popover - dimmed */
+    --popover: 240 3% 94%;
     --popover-foreground: 220 13% 10%;
 
     /* Primary accent */
@@ -141,13 +141,13 @@
     color: #ececec;
   }
 
-  /* Light page background - soft off-white */
+  /* Light page background - dimmed off-white for eye comfort */
   html:not(.dark) {
-    background-color: #f0f1f3;
+    background-color: #e8e8ea;
   }
 
   body:not(.dark) {
-    background-color: #f0f1f3;
+    background-color: #e8e8ea;
     color: #1f2937;
   }
 
@@ -241,9 +241,9 @@
     color: #fafafa;
   }
 
-  /* Light card - soft white with visible border */
+  /* Light card - dimmed warm white with visible border */
   html:not(.dark) .card {
-    background: #fafafa;
+    background: #f0f0f2;
     border: 1px solid #d1d5db;
     color: #18181b;
   }
@@ -312,7 +312,7 @@
   }
 
   html:not(.dark) .btn-secondary {
-    background: #fafafa;
+    background: #f0f0f2;
     color: #52525b;
     border: 1px solid #d1d5db;
   }
@@ -423,7 +423,7 @@
   }
 
   html:not(.dark) .input-field {
-    background: #fafafa;
+    background: #f0f0f2;
     border: 1px solid #d1d5db;
     color: #18181b;
   }
@@ -451,7 +451,7 @@
   html:not(.dark) .input-field:-webkit-autofill:hover,
   html:not(.dark) .input-field:-webkit-autofill:focus {
     -webkit-text-fill-color: #111827;
-    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+    -webkit-box-shadow: 0 0 0px 1000px #f0f0f2 inset;
     transition: background-color 5000s ease-in-out 0s;
   }
 
@@ -562,7 +562,7 @@
   }
 
   html:not(.dark) .stat-card {
-    background: #fafafa;
+    background: #f0f0f2;
     border: 1px solid #c6cbd3;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
     color: #1f2937;

@@ -203,20 +203,6 @@ export default function EventsPage() {
                             <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-0.5">Manage events for selected client</p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => {
-                                    setLoadingClients(true);
-                                    api.get('/api/clients').then(({ data }) => {
-                                        setClients(data.filter(c => c.is_active));
-                                        setLoadingClients(false);
-                                        if (selectedClient) loadEvents(selectedClient);
-                                    });
-                                }}
-                                className="btn-icon border border-zinc-300 dark:border-zinc-700"
-                                title="Refresh"
-                            >
-                                <RefreshCw size={16} />
-                            </button>
                             {selectedClient && (
                                 <button onClick={() => navigate(`/events/${selectedClient}/new`)} className="btn-primary flex items-center gap-1.5">
                                     <Plus size={14} /> New Event

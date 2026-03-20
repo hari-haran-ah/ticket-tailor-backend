@@ -5,19 +5,19 @@
 
 /* ── Theme Variables ───────────────────────────────────────── */
 :root {
-    /* Refined Organic Light Theme */
-    --app-bg: #FDFBF7;
-    /* Warm Alabaster */
-    --app-surface: #F5F2ED;
-    /* Soft warm surface */
-    --app-surface-2: #EAE6DF;
-    --app-border: #D1CEC5;
+    /* Refined Organic Light Theme - Dimmed for eye comfort */
+    --app-bg: #F0EDE8;
+    /* Dimmed warm Alabaster */
+    --app-surface: #E8E5DF;
+    /* Dimmed warm surface */
+    --app-surface-2: #DEDAD3;
+    --app-border: #C5C2BA;
     /* Organic stone border */
     --app-text: #2C2A29;
     /* Espresso */
     --app-text-muted: #6B6661;
     --app-text-faint: #A6A19C;
-    --navbar-bg: rgba(253, 251, 247, 0.85);
+    --navbar-bg: rgba(240, 237, 232, 0.85);
 
     /* Brand accent (Deep Forest Green) */
     --brand-r: 44;
@@ -68,8 +68,8 @@
     select:-webkit-autofill:hover,
     select:-webkit-autofill:focus {
         -webkit-text-fill-color: #2C2A29 !important;
-        -webkit-box-shadow: 0 0 0px 1000px #FDFBF7 inset !important;
-        box-shadow: 0 0 0px 1000px #FDFBF7 inset !important;
+        -webkit-box-shadow: 0 0 0px 1000px #F0EDE8 inset !important;
+        box-shadow: 0 0 0px 1000px #F0EDE8 inset !important;
         caret-color: #2C2A29 !important;
         transition: background-color 5000s ease-in-out 0s;
     }
