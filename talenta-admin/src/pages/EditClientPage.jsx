@@ -86,27 +86,27 @@ export default function EditClientPage() {
     }
 
     const fields = [
-        { key: 'name', label: 'Client Name', icon: Users, type: 'text', required: true, desc: 'The legal or display name of the client organization.' },
-        { key: 'domain_name', label: 'Domain Name', icon: Globe, type: 'text', required: true, placeholder: 'https://client.yourdomain.com', desc: 'The primary web domain for this client.' },
-        { key: 'tt_api_key', label: 'TicketTailor API Key', icon: Key, type: 'text', required: true, placeholder: 'sk_...', desc: 'Secret API key used to sync events from TicketTailor.' },
-        { key: 'stripe_account_id', label: 'Stripe Account ID', icon: DollarSign, type: 'text', placeholder: 'acct_...', desc: 'Used for Stripe Connect routed payments.' },
-        { key: 'platform_fee', label: 'Platform Fee %', icon: DollarSign, type: 'number', required: true, step: '0.01', min: '0', max: '100', desc: 'Percentage cut taken by the platform per sale.' },
-        { key: 'contact_email', label: 'Contact Email', icon: Mail, type: 'email', desc: 'Primary support or administrative contact email.' },
-        { key: 'contact_phone', label: 'Contact Phone', icon: Phone, type: 'text', desc: 'Primary administrative contact phone number.' },
-        { key: 'address', label: 'Address', icon: MapPin, type: 'text', desc: 'Physical or billing address. Can be omitted if unknown.' },
+        { key: 'name', label: 'Client Name', icon: Users, type: 'text', required: true },
+        { key: 'domain_name', label: 'Domain', icon: Globe, type: 'text', required: true, placeholder: 'https://...' },
+        { key: 'tt_api_key', label: 'TicketTailor API Key', icon: Key, type: 'text', required: true, placeholder: 'sk_...' },
+        { key: 'stripe_account_id', label: 'Stripe Account ID', icon: DollarSign, type: 'text', placeholder: 'acct_...' },
+        { key: 'platform_fee', label: 'Platform Fee %', icon: DollarSign, type: 'number', required: true, step: '0.01', min: '0', max: '100' },
+        { key: 'contact_email', label: 'Contact Email', icon: Mail, type: 'email' },
+        { key: 'contact_phone', label: 'Contact Phone', icon: Phone, type: 'text' },
+        { key: 'address', label: 'Address', icon: MapPin, type: 'text' },
     ]
 
     if (loadingInit) {
         return (
-            <div className="p-8 space-y-8 max-w-4xl mx-auto animate-fade-in">
-                <Skeleton className="w-32 h-4 mb-6" />
-                <Skeleton className="w-64 h-8" />
-                <div className="card p-8 space-y-8 mt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="p-4 md:p-6 space-y-6 max-w-3xl mx-auto">
+                <Skeleton className="w-28 h-4 mb-4" />
+                <Skeleton className="w-48 h-6" />
+                <div className="card p-5 space-y-6 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[1, 2, 3, 4, 5, 6].map(i => (
                             <div key={i} className="space-y-2">
-                                <Skeleton className="w-24 h-4" />
-                                <Skeleton className="w-full h-12" />
+                                <Skeleton className="w-20 h-3" />
+                                <Skeleton className="w-full h-9" />
                             </div>
                         ))}
                     </div>
@@ -116,46 +116,41 @@ export default function EditClientPage() {
     }
 
     return (
-        <div className="p-8 space-y-8 max-w-4xl mx-auto">
+        <div className="p-4 md:p-6 space-y-4 max-w-3xl mx-auto">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-gray-300 dark:border-white/10 pb-6">
-                <div className="space-y-3">
-                    <button onClick={() => navigate('/clients')} className="text-gray-500 dark:text-white/30 hover:text-gray-900 dark:hover:text-white/70 flex items-center gap-1.5 text-xs font-medium transition-colors">
-                        <ChevronLeft size={14} /> Back to Clients
-                    </button>
-                    <div>
-                        <p className="text-gray-600 dark:text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">Edit Client</p>
-                        <h1 className="text-2xl font-bold text-black dark:text-white tracking-tight">Manage Client Details</h1>
-                    </div>
-                </div>
+            <div className="space-y-2 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+                <button onClick={() => navigate('/clients')} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 text-xs font-medium transition-colors">
+                    <ChevronLeft size={14} /> Back
+                </button>
+                <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Edit Client</h1>
             </div>
 
             <div className="card overflow-hidden">
-                <form onSubmit={handleSubmit} className="p-8 space-y-8">
+                <form onSubmit={handleSubmit} className="p-4 md:p-5 space-y-5">
                     {/* Error Message */}
                     {error && error !== 'Client not found' && (
-                        <div className="p-4 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-black dark:text-white text-sm rounded-xl flex items-center gap-2">
-                            <AlertCircle size={18} /> {error}
+                        <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
+                            <AlertCircle size={16} /> {error}
                         </div>
                     )}
 
                     {error === 'Client not found' ? (
-                        <div className="text-center py-12 text-gray-500 dark:text-white/40">
+                        <div className="text-center py-12 text-zinc-500">
                             Client not found.
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                {fields.map(({ key, label, icon: Icon, type, required, placeholder, desc }) => (
-                                    <div key={key} className="space-y-1.5">
-                                        <label className="label">
-                                            {label}{required && <span className="text-black dark:text-white ml-1">*</span>}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {fields.map(({ key, label, icon: Icon, type, required, placeholder }) => (
+                                    <div key={key} className="space-y-1">
+                                        <label className="text-xs font-medium text-zinc-500">
+                                            {label}{required && <span className="text-zinc-900 dark:text-zinc-100 ml-0.5">*</span>}
                                         </label>
                                         <div className="relative">
-                                            <Icon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30" />
+                                            <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                                             <input
                                                 type={type}
-                                                className="input-field pl-10"
+                                                className="input-field pl-9"
                                                 placeholder={placeholder || `Enter ${label.toLowerCase()}`}
                                                 value={form[key]}
                                                 onChange={e => setForm({ ...form, [key]: e.target.value })}
@@ -165,30 +160,27 @@ export default function EditClientPage() {
                                                 max={key === 'platform_fee' ? '100' : undefined}
                                             />
                                         </div>
-                                        {desc && <p className="text-[11px] text-gray-500 dark:text-white/40 pt-0.5">{desc}</p>}
                                     </div>
                                 ))}
                             </div>
 
-                            <hr className="border-gray-300 dark:border-white/10" />
-
-                            <div className="flex items-center gap-3 pt-2">
+                            <div className="flex items-center gap-2 pt-2">
                                 <input
                                     type="checkbox"
                                     id="is_active"
                                     checked={form.is_active}
                                     onChange={e => setForm({ ...form, is_active: e.target.checked })}
-                                    className="w-5 h-5 rounded border-gray-300 dark:border-white/20 bg-white dark:bg-black accent-black dark:accent-white cursor-pointer"
+                                    className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 accent-zinc-900 dark:accent-zinc-100 cursor-pointer"
                                 />
-                                <label htmlFor="is_active" className="text-sm font-medium text-gray-700 dark:text-white/80 cursor-pointer select-none">
-                                    Set client as Active
+                                <label htmlFor="is_active" className="text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
+                                    Active
                                 </label>
                             </div>
 
-                            <div className="flex justify-end gap-4 pt-6 mt-8 border-t border-gray-300 dark:border-white/10">
-                                <button type="button" onClick={() => navigate('/clients')} className="btn-secondary px-8 py-3">Cancel</button>
-                                <button disabled={loading} className="btn-primary px-10 py-3 text-sm font-bold shadow-xl">
-                                    {loading ? 'Saving Changes...' : 'Save Changes'}
+                            <div className="flex justify-end gap-2 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                                <button type="button" onClick={() => navigate('/clients')} className="btn-secondary">Cancel</button>
+                                <button disabled={loading} className="btn-primary">
+                                    {loading ? 'Saving...' : 'Save Changes'}
                                 </button>
                             </div>
                         </>

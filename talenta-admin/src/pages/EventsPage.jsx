@@ -9,57 +9,67 @@ import Skeleton from '../components/Skeleton'
 import ClientPillBar from '../components/ClientPillBar'
 import ManageTicketsModal from '../components/ManageTicketsModal'
 
+// Helper function to format name with proper capitalization
+const formatName = (name) => {
+    if (!name) return ''
+    return name.split(' ').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ')
+}
+
 function EventCard({ event, clientId, onManage }) {
     const navigate = useNavigate()
     const status = event.status || 'unknown'
     const totalCapacity = (event.ticket_types || []).reduce((s, t) => s + (t.quantity || 0), 0)
 
     const statusClass = {
-        published: 'badge-published',
-        draft: 'badge-draft',
-        closed: 'badge-closed',
-    }[status] || 'badge-draft'
+        published: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/20',
+        draft: 'bg-[#e5e7eb] dark:bg-zinc-800 text-zinc-600 dark:text-zinc-500 border-[#d1d5db] dark:border-zinc-700',
+        closed: 'bg-[#e5e7eb] dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-[#d1d5db] dark:border-zinc-700',
+    }[status] || 'bg-[#e5e7eb] dark:bg-zinc-800 text-zinc-600 dark:text-zinc-500 border-[#d1d5db] dark:border-zinc-700'
 
     return (
         <div
             onClick={() => navigate(`/events/${clientId}/${event.id}`)}
-            className="card p-5 cursor-pointer hover:border-gray-400 dark:hover:border-white/30 transition-all duration-200 space-y-4 group"
+            className="card p-4 cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 transition-all group"
         >
-            <div className="flex items-start justify-between gap-3">
-                <h3 className="text-base font-semibold text-black dark:text-white leading-tight group-hover:text-gray-600 dark:group-hover:text-gray-400 transition-colors line-clamp-2">
-                    {event.name}
+            <div className="flex items-start justify-between gap-2 mb-3">
+                <h3 className="text-sm font-medium text-zinc-800 dark:text-zinc-100 leading-snug group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors line-clamp-2">
+                    {formatName(event.name)}
                 </h3>
-                <span className={statusClass}>{status}</span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-medium border flex-shrink-0 ${statusClass}`}>
+                    {status}
+                </span>
             </div>
 
-            <div className="space-y-2 text-xs text-gray-500 dark:text-white/50">
+            <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-500 mb-4">
                 {event.start && (
                     <div className="flex items-center gap-2">
-                        <Clock size={13} />
+                        <Clock size={12} />
                         <span>{new Date(event.start.date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                 )}
                 <div className="flex items-center gap-2">
-                    <Ticket size={13} />
+                    <Ticket size={12} />
                     <span>{event.total_issued_tickets || 0} / {totalCapacity || '∞'} issued</span>
                 </div>
                 {event.venue && (
                     <div className="flex items-center gap-2">
-                        <MapPin size={13} />
+                        <MapPin size={12} />
                         <span className="line-clamp-1">{event.venue.name}</span>
                     </div>
                 )}
             </div>
 
-            <div className="flex gap-2 pt-3 border-t border-gray-300 dark:border-white/10">
+            <div className="flex gap-2 pt-3 border-t border-[#e5e7eb] dark:border-zinc-800">
                 <button
                     onClick={(e) => { e.stopPropagation(); onManage(event) }}
-                    className="btn-secondary flex-1 py-2 text-xs"
+                    className="btn-secondary btn-sm flex-1"
                 >
                     Add Tickets
                 </button>
-                <div className="btn-primary flex-1 py-2 text-xs flex items-center justify-center gap-1.5">
-                    <Settings size={13} /> Manage
+                <div className="btn-primary btn-sm flex-1 flex items-center justify-center gap-1">
+                    <Settings size={12} /> Manage
                 </div>
             </div>
         </div>
@@ -114,28 +124,28 @@ export default function EventsPage() {
     )
 
     return (
-        <div className="flex flex-col md:flex-row h-full overflow-hidden bg-white dark:bg-[#212121]">
-            
-            {/* ── Desktop Left Sidebar: Clients List ── */}
-            <div className="hidden md:flex flex-col flex-shrink-0 w-72 lg:w-80 border-r border-gray-300 dark:border-white/10 bg-gray-50/50 dark:bg-[#1a1a1a]/50 h-full">
-                <div className="p-5 border-b border-gray-300 dark:border-white/10">
-                    <h2 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-widest">Select Client</h2>
-                    <div className="relative mt-4">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
-                        <input 
-                            type="text" 
-                            placeholder="Search clients..." 
-                            className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-[#212121] border border-gray-300 dark:border-white/10 rounded-lg text-black dark:text-white focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-white/30 transition-shadow"
+        <div className="flex flex-col md:flex-row h-full overflow-hidden bg-[#f0f1f3] dark:bg-[#0a0a0a]">
+
+            {/* ── Desktop Left Sidebar: Clients List - Theme Aware ── */}
+            <div className="hidden md:flex flex-col flex-shrink-0 w-64 lg:w-72 border-r border-zinc-200 dark:border-zinc-700 bg-[#fafafa] dark:bg-[#18181b] h-full">
+                <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+                    <h2 className="text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">Select Client</h2>
+                    <div className="relative mt-3">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            className="input-field pl-9"
                             value={clientSearch}
                             onChange={(e) => setClientSearch(e.target.value)}
                         />
                     </div>
                 </div>
-                
-                <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
+
+                <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
                     {loadingClients ? (
                         Array.from({ length: 5 }).map((_, i) => (
-                            <div key={i} className="p-3 rounded-xl border border-transparent">
+                            <div key={i} className="p-3 rounded-lg">
                                 <Skeleton className="w-3/4 h-4 mb-2" />
                                 <Skeleton className="w-1/2 h-3" />
                             </div>
@@ -147,33 +157,26 @@ export default function EventsPage() {
                                 <button
                                     key={c.id}
                                     onClick={() => { setSelectedClient(c.id.toString()); loadEvents(c.id.toString()); }}
-                                    className={`w-full text-left p-3 rounded-xl flex items-center justify-between transition-all duration-200 border ${
-                                        isSelected 
-                                            ? 'bg-gray-100 dark:bg-white/10 border-gray-200 dark:border-white/10 shadow-sm' 
-                                            : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-white/5 hover:border-gray-200 dark:hover:border-white/10'
+                                    className={`w-full text-left p-3 rounded-lg flex items-center justify-between transition-all ${
+                                        isSelected
+                                            ? 'bg-zinc-200 dark:bg-zinc-800'
+                                            : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'
                                     }`}
                                 >
-                                    <div className="flex flex-col overflow-hidden pr-3">
-                                        <span className="font-semibold text-sm text-gray-900 dark:text-white truncate">
-                                            {c.name}
+                                    <div className="flex flex-col overflow-hidden pr-2">
+                                        <span className={`text-sm truncate ${isSelected ? 'font-medium text-zinc-900 dark:text-zinc-100' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                                            {formatName(c.name)}
                                         </span>
-                                        <span className="text-[10px] font-mono text-gray-500 dark:text-white/40 truncate mt-0.5">
+                                        <span className="text-[10px] font-mono text-zinc-500 truncate mt-0.5">
                                             {c.domain_name.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                                         </span>
-                                    </div>
-                                    <div className={`px-2 py-1 rounded-md text-[10px] font-bold flex-shrink-0 ${
-                                        isSelected 
-                                            ? 'bg-gray-200 dark:bg-white/20 text-gray-700 dark:text-white' 
-                                            : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/40'
-                                    }`}>
-                                        {c.events !== undefined ? c.events : '-'} Evts
                                     </div>
                                 </button>
                             )
                         })
                     ) : (
-                        <div className="p-4 text-center text-sm text-gray-500 dark:text-white/40 italic">
-                            {clientSearch ? 'No clients match your search.' : 'No active clients found.'}
+                        <div className="p-4 text-center text-xs text-zinc-500">
+                            {clientSearch ? 'No clients match your search.' : 'No active clients.'}
                         </div>
                     )}
                 </div>
@@ -181,9 +184,9 @@ export default function EventsPage() {
 
             {/* ── Right Main Area: Events ── */}
             <div className="flex-1 flex flex-col h-full overflow-hidden">
-                {/* Mobile Client selector */}
-                <div className="md:hidden p-4 border-b border-gray-300 dark:border-white/10 bg-gray-50/50 dark:bg-[#1a1a1a]/50">
-                    <p className="text-gray-500 dark:text-white/50 text-xs uppercase tracking-widest font-semibold mb-2">Select Client</p>
+                {/* Mobile Client selector - Theme Aware */}
+                <div className="md:hidden p-4 border-b border-zinc-200 dark:border-zinc-700 bg-[#fafafa] dark:bg-[#18181b]">
+                    <p className="text-zinc-600 dark:text-zinc-400 text-xs uppercase tracking-wider font-medium mb-2">Select Client</p>
                     <ClientPillBar
                         clients={clients}
                         selectedId={selectedClient}
@@ -192,14 +195,14 @@ export default function EventsPage() {
                     />
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 custom-scrollbar">
-                    {/* Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 border-b border-gray-300 dark:border-white/10 pb-6">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+                    {/* Page Title + Actions Row */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <p className="text-gray-600 dark:text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">Client Assets</p>
-                            <h1 className="text-2xl font-bold text-black dark:text-white tracking-tight">Event Management</h1>
+                            <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Events</h1>
+                            <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-0.5">Manage events for selected client</p>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                             <button
                                 onClick={() => {
                                     setLoadingClients(true);
@@ -209,47 +212,46 @@ export default function EventsPage() {
                                         if (selectedClient) loadEvents(selectedClient);
                                     });
                                 }}
-                                className="btn-secondary group flex items-center gap-2"
+                                className="btn-icon border border-zinc-300 dark:border-zinc-700"
+                                title="Refresh"
                             >
-                                <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
-                                <span className="hidden sm:inline">Refresh</span>
+                                <RefreshCw size={16} />
                             </button>
                             {selectedClient && (
-                                <button onClick={() => navigate(`/events/${selectedClient}/new`)} className="btn-primary flex items-center gap-2">
-                                    <Plus size={16} /> Create Event
+                                <button onClick={() => navigate(`/events/${selectedClient}/new`)} className="btn-primary flex items-center gap-1.5">
+                                    <Plus size={14} /> New Event
                                 </button>
                             )}
                         </div>
                     </div>
 
                     {!selectedClient && !loadingClients && (
-                        <div className="card py-24 text-center border-dashed border-gray-300 dark:border-white/20 bg-transparent flex flex-col items-center justify-center">
-                            <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-4 border border-gray-200 dark:border-white/10">
-                                <CalendarDays size={28} className="text-gray-400 dark:text-white/30" />
+                        <div className="card py-16 text-center border-dashed bg-transparent flex flex-col items-center justify-center">
+                            <div className="w-12 h-12 rounded-xl bg-[#e5e7eb] dark:bg-zinc-800 flex items-center justify-center mb-3">
+                                <CalendarDays size={24} className="text-zinc-500 dark:text-zinc-400" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Select a Client</h3>
-                            <p className="text-gray-500 dark:text-white/50 max-w-sm mx-auto text-sm">
-                                Choose a client from the sidebar to view and manage their events, ticket types, and groups.
+                            <h3 className="text-base font-medium text-zinc-800 dark:text-zinc-100 mb-1">Select a Client</h3>
+                            <p className="text-zinc-600 dark:text-zinc-500 text-sm max-w-xs">
+                                Choose a client to view and manage their events.
                             </p>
                         </div>
                     )}
 
                     {selectedClient && loadingEvents && (
-                        <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5 animate-in fade-in duration-300">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                             {[1, 2, 3, 4, 5, 6].map(i => (
-                                <div key={i} className="card p-5 space-y-4">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <Skeleton className="w-40 h-5" />
-                                        <Skeleton className="w-16 h-5 rounded-full" />
+                                <div key={i} className="card p-4 space-y-4">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <Skeleton className="w-36 h-4" />
+                                        <Skeleton className="w-14 h-4 rounded" />
                                     </div>
-                                    <div className="space-y-3">
-                                        <Skeleton className="w-32 h-3" />
-                                        <Skeleton className="w-24 h-3" />
-                                        <Skeleton className="w-48 h-3" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="w-28 h-3" />
+                                        <Skeleton className="w-20 h-3" />
                                     </div>
-                                    <div className="flex gap-2 pt-3 border-t border-gray-300 dark:border-white/10">
-                                        <Skeleton className="h-8 flex-1 rounded-xl" />
-                                        <Skeleton className="h-8 flex-1 rounded-xl" />
+                                    <div className="flex gap-2 pt-3 border-t border-[#e5e7eb] dark:border-zinc-800">
+                                        <Skeleton className="h-7 flex-1 rounded" />
+                                        <Skeleton className="h-7 flex-1 rounded" />
                                     </div>
                                 </div>
                             ))}
@@ -257,13 +259,13 @@ export default function EventsPage() {
                     )}
 
                     {error && (
-                        <div className="p-4 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-black dark:text-white text-sm rounded-xl flex items-center gap-2">
+                        <div className="card p-3 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
                             <AlertCircle size={16} /> {error}
                         </div>
                     )}
 
                     {!loadingEvents && events.length > 0 && selectedClient && (
-                        <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5 animate-in fade-in duration-300">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                             {events.map(ev => (
                                 <EventCard
                                     key={ev.id}
@@ -276,15 +278,15 @@ export default function EventsPage() {
                     )}
 
                     {!loadingEvents && selectedClient && events.length === 0 && !error && (
-                        <div className="card py-20 text-center border-dashed border-gray-300 dark:border-white/20 bg-transparent animate-in fade-in duration-300">
-                            <CalendarDays size={48} className="mx-auto mb-4 text-gray-300 dark:text-white/20" />
-                            <p className="text-gray-900 dark:text-white font-semibold text-lg">No events found</p>
-                            <p className="text-gray-500 dark:text-white/40 text-sm mt-1">Create your first event for this client to get started.</p>
-                            <button 
-                                onClick={() => navigate(`/events/${selectedClient}/new`)} 
-                                className="mt-6 btn-primary inline-flex items-center gap-2 shadow-lg shadow-black/10 dark:shadow-white/10"
+                        <div className="card py-16 text-center border-dashed bg-transparent">
+                            <CalendarDays size={36} className="mx-auto mb-3 text-zinc-400 dark:text-zinc-600" />
+                            <p className="text-zinc-800 dark:text-zinc-100 font-medium">No events found</p>
+                            <p className="text-zinc-600 dark:text-zinc-500 text-sm mt-1">Create your first event to get started.</p>
+                            <button
+                                onClick={() => navigate(`/events/${selectedClient}/new`)}
+                                className="mt-4 btn-primary inline-flex items-center gap-1.5"
                             >
-                                <Plus size={16} /> Create Event
+                                <Plus size={14} /> Create Event
                             </button>
                         </div>
                     )}

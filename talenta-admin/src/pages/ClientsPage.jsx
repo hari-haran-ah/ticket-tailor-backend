@@ -5,14 +5,23 @@ import api from '../lib/api'
 import {
     Plus, Pencil, Trash2, X, Check, AlertCircle,
     Globe, Key, DollarSign, Phone, Mail, MapPin, Users,
-    CalendarDays, Search, ChevronLeft, ChevronRight,
-    Eye, ToggleLeft, ToggleRight, Power, RefreshCw
+    CalendarDays, Search, ChevronLeft, ChevronRight, ChevronDown,
+    Eye, ToggleLeft, ToggleRight, Power, RefreshCw,
+    ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react'
 import Skeleton from '../components/Skeleton'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
 import Toast from '../components/Toast'
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 10
+
+// Helper function to format name with proper capitalization
+const formatName = (name) => {
+    if (!name) return ''
+    return name.split(' ').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ')
+}
 
 
 
@@ -21,76 +30,37 @@ function ToggleStatusModal({ client, onClose, onConfirm, loading }) {
     if (!client) return null
     const willBeActive = !client.is_active
     return createPortal(
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
-            <div className="card w-full max-w-sm p-6 space-y-5">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+            <div className="card w-full max-w-sm p-5 space-y-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gray-100 dark:bg-white/10">
-                        <Power size={20} className="text-black dark:text-white" />
+                    <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                        <Power size={18} className="text-zinc-700 dark:text-zinc-300" />
                     </div>
                     <div>
-                        <h3 className="text-black dark:text-white font-semibold">
+                        <h3 className="text-zinc-900 dark:text-zinc-100 font-medium text-sm">
                             {willBeActive ? 'Activate' : 'Deactivate'} Client
                         </h3>
-                        <p className="text-gray-500 dark:text-white/50 text-xs mt-0.5">{client.name}</p>
+                        <p className="text-zinc-500 text-xs">{formatName(client.name)}</p>
                     </div>
                 </div>
-                <p className="text-gray-600 dark:text-white/60 text-sm">
-                    Are you sure you want to <strong className="text-black dark:text-white">
-                        {willBeActive ? 'activate' : 'deactivate'}
-                    </strong> <span className="text-black dark:text-white">{client.name}</span>?
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm">
                     {willBeActive
-                        ? ' The client will be able to receive traffic immediately.'
-                        : ' The client\'s frontend will receive a 404 error until reactivated.'}
+                        ? 'Client will be able to receive traffic immediately.'
+                        : 'Client\'s frontend will receive a 404 error until reactivated.'}
                 </p>
-                <div className="flex gap-3">
+                <div className="flex gap-2 pt-2">
                     <button onClick={onClose} className="btn-secondary flex-1">Cancel</button>
                     <button
                         onClick={onConfirm}
                         disabled={loading}
-                        className="btn-primary flex-1 flex items-center justify-center gap-2"
+                        className="btn-primary flex-1 flex items-center justify-center gap-1.5"
                     >
-                        {loading ? 'Updating…' : <><Check size={14} /> Confirm</>}
+                        {loading ? 'Updating...' : <><Check size={14} /> Confirm</>}
                     </button>
                 </div>
             </div>
         </div>,
         document.body
-    )
-}
-
-
-
-// ─── Skeleton Row ─────────────────────────────────────────────────────────────
-function SkeletonTable() {
-    return (
-        <div className="card animate-pulse">
-            <div className="overflow-x-auto">
-                <table className="w-full">
-                    <thead>
-                        <tr className="border-b border-gray-300 dark:border-white/5">
-                            {[80, 160, 140, 50, 60, 140, 60].map((w, i) => (
-                                <th key={i} className="px-6 py-4">
-                                    <Skeleton className={`h-3 rounded`} style={{ width: w }} />
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                            <tr key={i} className="border-b border-gray-300 dark:border-white/5">
-                                <td className="px-6 py-5"><Skeleton className="w-32 h-4" /></td>
-                                <td className="px-6 py-5"><Skeleton className="w-48 h-4" /></td>
-                                <td className="px-6 py-5"><div className="space-y-2"><Skeleton className="w-40 h-3" /><Skeleton className="w-32 h-3" /></div></td>
-                                <td className="px-6 py-5"><Skeleton className="w-10 h-4 ml-auto" /></td>
-                                <td className="px-6 py-5"><Skeleton className="w-16 h-6 rounded-full mx-auto" /></td>
-                                <td className="px-6 py-5"><Skeleton className="w-40 h-3" /></td>
-                                <td className="px-6 py-5"><div className="flex justify-end gap-2"><Skeleton className="w-8 h-8 rounded-lg" /><Skeleton className="w-8 h-8 rounded-lg" /><Skeleton className="w-8 h-8 rounded-lg" /></div></td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
     )
 }
 
@@ -104,17 +74,63 @@ export default function ClientsPage() {
     const [search, setSearch] = useState('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [page, setPage] = useState(1)
+    const [pageSize, setPageSize] = useState(5)
+    const [pageSizeOpen, setPageSizeOpen] = useState(false)
     const [totalPages, setTotalPages] = useState(1)
     const [totalItems, setTotalItems] = useState(0)
     const [toggleTarget, setToggleTarget] = useState(null)
     const [toggling, setToggling] = useState(false)
+    const [sortOrder, setSortOrder] = useState('desc')
+    const [sortBy, setSortBy] = useState('created_at')
+
+    const SortableHeader = ({ label, field }) => {
+        const isActive = sortBy === field;
+        return (
+            <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400">
+                <button 
+                    onClick={() => {
+                        if (isActive) {
+                            if (sortOrder === 'asc') {
+                                setSortOrder('desc')
+                            } else {
+                                setSortBy('created_at')
+                                setSortOrder('desc')
+                            }
+                        } else {
+                            setSortBy(field)
+                            setSortOrder('asc')
+                        }
+                    }}
+                    className={`group flex items-center gap-1.5 transition-colors ${
+                        isActive 
+                            ? 'text-blue-600 dark:text-blue-400 font-semibold' 
+                            : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                    }`}
+                >
+                    {label}
+                    {isActive ? (
+                        sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                    ) : (
+                        <ArrowUpDown size={14} className="opacity-40 transition-opacity group-hover:opacity-100" />
+                    )}
+                </button>
+            </th>
+        );
+    };
 
     const load = async () => {
         setLoading(true)
         setError('')
         try {
             const { data } = await api.get('/api/clients/paginated', {
-                params: { page, size: PAGE_SIZE, search: debouncedSearch }
+                params: { 
+                    page, 
+                    size: pageSize, 
+                    search: debouncedSearch,
+                    search: debouncedSearch,
+                    sort_by: sortBy,
+                    sort_order: sortOrder
+                }
             })
             setClients(data.items)
             setTotalPages(data.pages)
@@ -134,7 +150,7 @@ export default function ClientsPage() {
         return () => clearTimeout(handler)
     }, [search])
 
-    useEffect(() => { load() }, [page, debouncedSearch])
+    useEffect(() => { load() }, [page, pageSize, debouncedSearch, sortOrder, sortBy])
 
 
     // ── Toggle Status ─────────────────────────────────────────────────────────
@@ -154,151 +170,162 @@ export default function ClientsPage() {
     }
 
     return (
-        <div className="p-4 md:p-8 space-y-5 md:space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+        <div className="p-4 md:p-6 space-y-4">
+            {/* Page Title + Actions Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-black dark:text-white">Clients</h1>
-                    <p className="text-gray-500 dark:text-white/50 text-sm mt-1">{totalItems} client(s) registered</p>
+                    <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Clients</h1>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-0.5">Add and manage clients for this application</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button onClick={load} className="btn-secondary group flex items-center gap-2">
-                        <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
-                        <span className="hidden sm:inline">Refresh</span>
+                <div className="flex items-center gap-2">
+                    <div className="relative">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
+                        <input
+                            type="text"
+                            placeholder="Search clients..."
+                            className="input-field h-9 pl-9 pr-8 w-48 dark:text-zinc-200 dark:bg-[#0a0a0a] dark:border-zinc-800"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                        {search && (
+                            <button
+                                onClick={() => setSearch('')}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                                title="Clear search"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                    <button onClick={load} className="flex items-center justify-center w-9 h-9 rounded-md text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors border border-zinc-300 dark:border-zinc-800 dark:bg-[#0a0a0a]" title="Refresh">
+                        <RefreshCw size={16} />
                     </button>
-                    <button onClick={() => navigate('/clients/new')} className="btn-primary flex items-center gap-2">
+                    <button onClick={() => navigate('/clients/new')} className="btn-primary h-9 flex items-center justify-center gap-1.5 px-4 font-bold">
                         <Plus size={16} />
-                        <span className="hidden sm:inline">New Client</span>
-                        <span className="sm:hidden">New</span>
+                        New Client
                     </button>
                 </div>
-            </div>
-
-            {/* Search Bar */}
-            <div className="relative w-full md:max-w-sm">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/40" />
-                <input
-                    type="text"
-                    placeholder="Search by name, domain, email…"
-                    className="input-field pl-9 text-sm"
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                />
             </div>
 
             {error && (
-                <div className="card p-4 flex items-center gap-3 text-black dark:text-white">
-                    <AlertCircle size={18} /> {error}
+                <div className="card p-3 flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                    <AlertCircle size={16} /> {error}
                 </div>
             )}
 
             {/* ── Desktop Table (md+) ── */}
-            {loading ? <SkeletonTable /> : (
-                <div className="card overflow-hidden">
+            <div className="card overflow-hidden dark:bg-[#0a0a0a] border-zinc-200 dark:border-zinc-800">
 
-                    {/* TABLE — hidden on mobile */}
-                    <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-gray-300 dark:border-white/10 text-gray-500 dark:text-white/50 text-xs uppercase tracking-wider">
-                                    <th className="px-6 py-3 text-left">Client</th>
-                                    <th className="px-6 py-3 text-left">Domain</th>
-                                    <th className="px-6 py-3 text-left">Keys & Accounts</th>
-                                    <th className="px-6 py-3 text-right">Fee %</th>
-                                    <th className="px-6 py-3 text-center">Status</th>
-                                    <th className="px-6 py-3 text-left">Contact</th>
-                                    <th className="px-6 py-3 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {clients.map(c => (
-                                    <tr key={c.id} className="border-b border-gray-300 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-                                        <td className="px-6 py-4 font-medium text-black dark:text-white">{c.name}</td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-white/60 font-mono text-xs max-w-[160px] truncate">{c.domain_name}</td>
-                                        <td className="px-6 py-4 font-mono text-[10px] text-gray-500 dark:text-white/50">
-                                            <div className="flex flex-col gap-1">
-                                                <span>TT: {c.tt_api_key.substring(0, 12)}…</span>
-                                                {c.stripe_account_id && <span className="text-black dark:text-white">Stripe: {c.stripe_account_id}</span>}
-                                            </div>
+                {/* TABLE — hidden on mobile */}
+                <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr className="border-b border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white bg-zinc-50/50 dark:bg-zinc-900/20">
+                                <SortableHeader label="Name" field="name" />
+                                <SortableHeader label="Domain" field="domain_name" />
+                                <SortableHeader label="Fee" field="platform_fee" />
+                                <SortableHeader label="Status" field="is_active" />
+                                <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <tr key={i} className="border-b border-[#e5e7eb] dark:border-zinc-800/50">
+                                        <td className="px-4 py-3"><Skeleton className="w-28 h-4 rounded" /></td>
+                                        <td className="px-4 py-3"><Skeleton className="w-36 h-4 rounded" /></td>
+                                        <td className="px-4 py-3"><Skeleton className="w-12 h-4 rounded" /></td>
+                                        <td className="px-4 py-3"><Skeleton className="w-16 h-5 rounded-full" /></td>
+                                        <td className="px-4 py-3"><div className="flex justify-start gap-1"><Skeleton className="w-7 h-7 rounded" /><Skeleton className="w-7 h-7 rounded" /></div></td>
+                                    </tr>
+                                ))
+                            ) : clients.map(c => (
+                                    <tr key={c.id} className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors">
+                                        <td className="px-4 py-3">
+                                            <span className="font-medium text-zinc-900 dark:text-white">{formatName(c.name)}</span>
+                                            {c.contact_email && (
+                                                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{c.contact_email}</p>
+                                            )}
                                         </td>
-                                        <td className="px-6 py-4 text-right text-gray-700 dark:text-white/70">{c.platform_fee}%</td>
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="px-4 py-3 text-zinc-900 dark:text-zinc-200 font-mono text-xs">{c.domain_name}</td>
+                                        <td className="px-4 py-3 text-left text-zinc-900 dark:text-zinc-200">{c.platform_fee}%</td>
+                                        <td className="px-4 py-3 text-left">
                                             <button
                                                 onClick={() => setToggleTarget(c)}
-                                                className="group flex items-center justify-center gap-1.5 mx-auto"
+                                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium transition-colors border ${c.is_active
+                                                        ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20'
+                                                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                                                    }`}
                                             >
                                                 {c.is_active
-                                                    ? <ToggleRight size={22} className="text-green-600 group-hover:text-green-700 transition-colors" />
-                                                    : <ToggleLeft size={22} className="text-red-600 group-hover:text-red-700 transition-colors" />
+                                                    ? <><ToggleRight size={14} /> Active</>
+                                                    : <><ToggleLeft size={14} /> Inactive</>
                                                 }
-                                                <span className={`text-xs font-medium ${c.is_active ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {c.is_active ? 'Active' : 'Inactive'}
-                                                </span>
                                             </button>
                                         </td>
-                                        <td className="px-6 py-4 text-gray-500 dark:text-white/50 text-xs">{c.contact_email || '—'}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button onClick={() => navigate(`/clients/${c.id}/view`)} className="p-2 rounded-lg text-gray-500 dark:text-white/50 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 transition-colors" title="View Details"><Eye size={14} /></button>
-                                                <button onClick={() => navigate(`/events/${c.id}`)} className="p-2 rounded-lg text-gray-600 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 transition-colors" title="View Events"><CalendarDays size={14} /></button>
-                                                <button onClick={() => navigate(`/clients/${c.id}/edit`)} className="p-2 rounded-lg text-gray-500 dark:text-white/50 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 transition-colors" title="Edit"><Pencil size={14} /></button>
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center justify-start gap-1">
+                                                <button onClick={() => navigate(`/clients/${c.id}/view`)} className="btn-icon text-zinc-900 dark:text-zinc-200" title="View"><Eye size={14} /></button>
+                                                <button onClick={() => navigate(`/events/${c.id}`)} className="btn-icon text-zinc-900 dark:text-zinc-200" title="Events"><CalendarDays size={14} /></button>
+                                                <button onClick={() => navigate(`/clients/${c.id}/edit`)} className="btn-icon text-zinc-900 dark:text-zinc-200" title="Edit"><Pencil size={14} /></button>
                                             </div>
                                         </td>
                                     </tr>
                                 ))}
-                            </tbody>
-                        </table>
-                        {clients.length === 0 && (
-                            <div className="text-center py-16 text-gray-500 dark:text-white/40">
-                                <Users size={40} className="mx-auto mb-3 opacity-40" />
-                                {search ? `No clients match "${search}"` : 'No clients yet.'}
-                            </div>
-                        )}
-                    </div>
+                        </tbody>
+                    </table>
+                    {!loading && clients.length === 0 && (
+                        <div className="text-center py-12 text-zinc-500 dark:text-zinc-400">
+                            <Users size={32} className="mx-auto mb-2 opacity-40" />
+                            <p className="text-sm">{search ? `No clients match "${search}"` : 'No clients yet'}</p>
+                        </div>
+                    )}
+                </div>
 
-                    {/* CARD LIST — shown only on mobile */}
-                    <div className="md:hidden divide-y divide-gray-200 dark:divide-white/10">
-                        {clients.length === 0 ? (
-                            <div className="text-center py-16 text-gray-500 dark:text-white/40 px-4">
-                                <Users size={36} className="mx-auto mb-3 opacity-40" />
-                                {search ? `No clients match "${search}"` : 'No clients yet.'}
+                {/* CARD LIST — shown only on mobile */}
+                <div className="md:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
+                    {loading ? (
+                        Array.from({ length: 5 }).map((_, i) => (
+                            <div key={i} className="p-4 space-y-3">
+                                <div className="flex justify-between items-center"><Skeleton className="w-24 h-4 rounded" /><Skeleton className="w-16 h-5 rounded-full" /></div>
+                                <div className="grid grid-cols-2 gap-y-2"><Skeleton className="w-32 h-3 rounded" /><Skeleton className="w-24 h-3 rounded" /><Skeleton className="w-16 h-3 rounded col-span-2" /></div>
+                                <div className="flex gap-2 pt-2"><Skeleton className="h-8 flex-1 rounded" /><Skeleton className="h-8 flex-1 rounded" /><Skeleton className="h-8 flex-1 rounded" /></div>
+                            </div>
+                        ))
+                    ) : clients.length === 0 ? (
+                            <div className="text-center py-12 text-zinc-600 dark:text-zinc-400 px-4">
+                                <Users size={32} className="mx-auto mb-2 opacity-40" />
+                                <p className="text-sm">{search ? `No clients match "${search}"` : 'No clients yet'}</p>
                             </div>
                         ) : clients.map(c => (
-                            <div key={c.id} className="p-4 space-y-3">
+                            <div key={c.id} className="p-4 space-y-2">
                                 {/* Name + status */}
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="text-black dark:text-white font-semibold text-sm">{c.name}</span>
+                                    <span className="text-zinc-900 dark:text-white font-semibold text-sm">{formatName(c.name)}</span>
                                     <button
                                         onClick={() => setToggleTarget(c)}
-                                        className="flex items-center gap-1"
+                                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium border ${c.is_active
+                                                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30'
+                                                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                                            }`}
                                     >
-                                        {c.is_active
-                                            ? <ToggleRight size={20} className="text-green-600" />
-                                            : <ToggleLeft size={20} className="text-red-600" />
-                                        }
-                                        <span className={`text-xs font-medium ${c.is_active ? 'text-green-600' : 'text-red-600'}`}>
-                                            {c.is_active ? 'Active' : 'Inactive'}
-                                        </span>
+                                        {c.is_active ? 'Active' : 'Inactive'}
                                     </button>
                                 </div>
                                 {/* Domain + fee */}
-                                <div className="flex items-center gap-3 text-[11px]">
-                                    <span className="font-mono text-gray-500 dark:text-white/50 truncate flex-1">{c.domain_name}</span>
-                                    <span className="text-gray-600 dark:text-white/60 flex-shrink-0">{c.platform_fee}% fee</span>
+                                <div className="flex items-center justify-between text-xs text-zinc-500">
+                                    <span className="font-mono truncate flex-1">{c.domain_name}</span>
+                                    <span className="ml-2">{c.platform_fee}% fee</span>
                                 </div>
-                                {/* Email */}
-                                {c.contact_email && (
-                                    <p className="text-xs text-gray-500 dark:text-white/50">{c.contact_email}</p>
-                                )}
                                 {/* Action buttons */}
-                                <div className="flex items-center gap-2 pt-1">
-                                    <button onClick={() => navigate(`/clients/${c.id}/view`)} className="flex-1 py-1.5 rounded-lg text-xs text-gray-600 dark:text-white/60 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-1.5">
+                                <div className="flex items-center gap-2 pt-2">
+                                    <button onClick={() => navigate(`/clients/${c.id}/view`)} className="btn-secondary btn-sm flex-1 flex items-center justify-center gap-1 text-zinc-900 dark:text-zinc-200">
                                         <Eye size={12} /> View
                                     </button>
-                                    <button onClick={() => navigate(`/events/${c.id}`)} className="flex-1 py-1.5 rounded-lg text-xs text-black dark:text-white bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 transition-colors flex items-center justify-center gap-1.5">
+                                    <button onClick={() => navigate(`/events/${c.id}`)} className="btn-secondary btn-sm flex-1 flex items-center justify-center gap-1 text-zinc-900 dark:text-zinc-200">
                                         <CalendarDays size={12} /> Events
                                     </button>
-                                    <button onClick={() => navigate(`/clients/${c.id}/edit`)} className="flex-1 py-1.5 rounded-lg text-xs text-gray-600 dark:text-white/60 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-1.5">
+                                    <button onClick={() => navigate(`/clients/${c.id}/edit`)} className="btn-secondary btn-sm flex-1 flex items-center justify-center gap-1 text-zinc-900 dark:text-zinc-200">
                                         <Pencil size={12} /> Edit
                                     </button>
                                 </div>
@@ -306,42 +333,78 @@ export default function ClientsPage() {
                         ))}
                     </div>
 
-                    {/* Pagination — shared */}
-                    {totalItems > PAGE_SIZE && (
-                        <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-6 py-3 border-t border-gray-300 dark:border-white/10">
-                            <p className="text-gray-500 dark:text-white/50 text-xs">
-                                Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalItems)} of {totalItems}
-                            </p>
-                            <div className="flex items-center gap-1">
+                    {/* Pagination Footer */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t border-zinc-200 dark:border-zinc-800">
+                        <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+                            Showing {totalItems === 0 ? 0 : (page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalItems)} of {totalItems} results
+                        </p>
+                        <div className="flex items-center gap-4 sm:gap-6">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-zinc-500 dark:text-zinc-400">Rows:</span>
+                                <div 
+                                    className="relative"
+                                    tabIndex={-1}
+                                    onBlur={(e) => {
+                                        if (!e.currentTarget.contains(e.relatedTarget)) {
+                                            setPageSizeOpen(false);
+                                        }
+                                    }}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => setPageSizeOpen(!pageSizeOpen)}
+                                        className="flex items-center justify-between gap-1.5 cursor-pointer bg-transparent border border-zinc-200 dark:border-zinc-800 rounded text-sm text-zinc-900 dark:text-zinc-200 py-1 pl-3 pr-2 focus:outline-none hover:border-zinc-300 dark:hover:border-zinc-700 transition min-w-[56px]"
+                                    >
+                                        <span>{pageSize}</span>
+                                        <ChevronDown size={14} className="text-zinc-500 dark:text-zinc-400" />
+                                    </button>
+                                    
+                                    {pageSizeOpen && (
+                                        <div className="absolute bottom-full mb-1 left-0 w-full min-w-max bg-white dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800 rounded shadow-lg overflow-hidden z-50 p-1">
+                                            {[5, 10].map(size => (
+                                                <button
+                                                    key={size}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setPageSize(size);
+                                                        setPage(1);
+                                                        setPageSizeOpen(false);
+                                                    }}
+                                                    className={`w-full text-left px-2 py-1.5 text-sm rounded-sm transition-colors ${
+                                                        pageSize === size 
+                                                            ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium' 
+                                                            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-[#18181b] hover:text-zinc-900 dark:hover:text-zinc-200'
+                                                    }`}
+                                                >
+                                                    {size}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex items-center font-medium gap-1">
                                 <button
                                     disabled={page === 1}
                                     onClick={() => setPage(p => p - 1)}
-                                    className="p-1.5 rounded-lg text-gray-500 dark:text-white/50 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    className="px-3 py-1 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                 >
-                                    <ChevronLeft size={16} />
+                                    Previous
                                 </button>
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                                    <button
-                                        key={p}
-                                        onClick={() => setPage(p)}
-                                        className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${p === page ? 'bg-black dark:bg-white text-white dark:text-black' : 'text-gray-500 dark:text-white/50 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10'
-                                            }`}
-                                    >
-                                        {p}
-                                    </button>
-                                ))}
+                                <button className="min-w-[28px] h-7 px-2 flex items-center justify-center rounded-md text-sm bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900">
+                                    {page}
+                                </button>
                                 <button
-                                    disabled={page === totalPages}
+                                    disabled={page >= totalPages || totalPages === 0}
                                     onClick={() => setPage(p => p + 1)}
-                                    className="p-1.5 rounded-lg text-gray-500 dark:text-white/50 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    className="px-3 py-1 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                 >
-                                    <ChevronRight size={16} />
+                                    Next
                                 </button>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
-            )}
 
 
 

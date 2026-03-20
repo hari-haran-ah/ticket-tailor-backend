@@ -25,6 +25,8 @@ def list_clients_paginated(
     page: int = 1,
     size: int = 5,
     search: str = "",
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
     db: Session = Depends(get_db),
     _: Admin = Depends(get_current_admin),
 ):
@@ -39,8 +41,24 @@ def list_clients_paginated(
             )
         )
     
+    if sort_by == "name":
+        order_col = Client.name
+    elif sort_by == "domain_name":
+        order_col = Client.domain_name
+    elif sort_by == "platform_fee":
+        order_col = Client.platform_fee
+    elif sort_by == "is_active":
+        order_col = Client.is_active
+    else:
+        order_col = Client.created_at
+
+    if sort_order == "asc":
+        query = query.order_by(order_col.asc())
+    else:
+        query = query.order_by(order_col.desc())
+        
     total = query.count()
-    items = query.order_by(Client.created_at.desc()).offset((page - 1) * size).limit(size).all()
+    items = query.offset((page - 1) * size).limit(size).all()
     pages = max(1, (total + size - 1) // size)
     
     return PaginatedClientOut(
