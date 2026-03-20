@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../lib/api'
 import {
     CalendarDays, AlertCircle, Clock, Plus, Settings, X,
-    Ticket, MapPin, RefreshCw, Search
+    Ticket, MapPin, RefreshCw, Search, ChevronLeft, ChevronRight
 } from 'lucide-react'
 import Skeleton from '../components/Skeleton'
 import ClientPillBar from '../components/ClientPillBar'
@@ -82,6 +82,11 @@ export default function EventsPage() {
     const navigate = useNavigate()
     const { clientId: urlClientId } = useParams()
     const [clients, setClients] = useState([])
+    const [clientsPage, setClientsPage] = useState(1)
+    const [clientsTotalPages, setClientsTotalPages] = useState(1)
+    const [clientSearch, setClientSearch] = useState('')
+    const [debouncedClientSearch, setDebouncedClientSearch] = useState('')
+
     const [selectedClient, setSelectedClient] = useState('')
     const [events, setEvents] = useState([])
     const [loadingClients, setLoadingClients] = useState(true)
@@ -90,37 +95,70 @@ export default function EventsPage() {
     const [isManageOpen, setIsManageOpen] = useState(false)
     const [selectedEvent, setSelectedEvent] = useState(null)
 
+    // Debounce client search
     useEffect(() => {
-        api.get('/api/clients').then(({ data }) => {
-            const active = data.filter(c => c.is_active)
-            setClients(active)
-            setLoadingClients(false)
+        const timer = setTimeout(() => { setDebouncedClientSearch(clientSearch); setClientsPage(1) }, 400)
+        return () => clearTimeout(timer)
+    }, [clientSearch])
 
-            if (urlClientId) {
-                setSelectedClient(urlClientId)
-                loadEvents(urlClientId)
-            }
-        })
-    }, [urlClientId])
-
-    const loadEvents = async (clientId) => {
-        if (!clientId) return
-        setLoadingEvents(true); setError(''); setEvents([])
+    const loadClients = async () => {
+        setLoadingClients(true)
         try {
-            const { data } = await api.get(`/api/tt/${clientId}/events`)
-            setEvents(data.data?.data || [])
-        } catch (e) {
-            setError(e.response?.data?.detail || 'Failed to sync with TicketTailor')
+            const { data } = await api.get(`/api/clients/paginated?page=${clientsPage}&size=6&search=${debouncedClientSearch}&sort_by=created_at&sort_order=desc`)
+            setClients(data.items || [])
+            setClientsTotalPages(data.pages || 1)
+        } catch (err) {
+            console.error('Failed to load clients', err)
         } finally {
-            setLoadingEvents(false)
+            setLoadingClients(false)
         }
     }
 
-    // Filter clients for sidebar
-    const [clientSearch, setClientSearch] = useState('')
-    const filteredClients = clients.filter(c => 
-        c.name.toLowerCase().includes(clientSearch.toLowerCase()) || 
-        c.domain_name.toLowerCase().includes(clientSearch.toLowerCase())
+    useEffect(() => {
+        loadClients()
+    }, [clientsPage, debouncedClientSearch])
+
+    useEffect(() => {
+        if (urlClientId && urlClientId !== selectedClient) {
+            setSelectedClient(urlClientId)
+            loadEvents(urlClientId)
+        }
+    }, [urlClientId])
+
+    const currentFetchRef = useRef(0)
+
+    const loadEvents = async (clientId) => {
+        if (!clientId) return
+
+        const fetchId = Date.now()
+        currentFetchRef.current = fetchId
+
+        setLoadingEvents(true); setError(''); setEvents([])
+        try {
+            const { data } = await api.get(`/api/tt/${clientId}/events`)
+            if (currentFetchRef.current === fetchId) {
+                setEvents(data.data?.data || [])
+            }
+        } catch (e) {
+            if (currentFetchRef.current === fetchId) {
+                const detail = e.response?.data?.detail;
+                if (typeof detail === 'string' && (detail.includes('FORBIDDEN') || detail.includes('status":403'))) {
+                    setError('TicketTailor API key is missing or invalid.');
+                } else {
+                    setError(detail || 'Failed to sync with TicketTailor');
+                }
+            }
+        } finally {
+            if (currentFetchRef.current === fetchId) {
+                setLoadingEvents(false)
+            }
+        }
+    }
+
+    // Filter events for main area
+    const [eventSearch, setEventSearch] = useState('')
+    const filteredEvents = events.filter(e =>
+        e.name.toLowerCase().includes(eventSearch.toLowerCase())
     )
 
     return (
@@ -150,23 +188,32 @@ export default function EventsPage() {
                                 <Skeleton className="w-1/2 h-3" />
                             </div>
                         ))
-                    ) : filteredClients.length > 0 ? (
-                        filteredClients.map(c => {
+                    ) : clients.length > 0 ? (
+                        clients.map(c => {
                             const isSelected = selectedClient === c.id.toString()
                             return (
                                 <button
                                     key={c.id}
-                                    onClick={() => { setSelectedClient(c.id.toString()); loadEvents(c.id.toString()); }}
-                                    className={`w-full text-left p-3 rounded-lg flex items-center justify-between transition-all ${
-                                        isSelected
+                                    onClick={() => {
+                                        if (isSelected) navigate('/events')
+                                        else navigate(`/events/${c.id}`)
+                                    }}
+                                    className={`w-full text-left p-3 rounded-lg flex items-center justify-between transition-all ${isSelected
                                             ? 'bg-zinc-200 dark:bg-zinc-800'
                                             : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="flex flex-col overflow-hidden pr-2">
-                                        <span className={`text-sm truncate ${isSelected ? 'font-medium text-zinc-900 dark:text-zinc-100' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                                            {formatName(c.name)}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-sm truncate ${isSelected ? 'font-medium text-zinc-900 dark:text-zinc-100' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                                                {formatName(c.name)}
+                                            </span>
+                                            {!c.is_active && (
+                                                <span className="shrink-0 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-bold">
+                                                    Inactive
+                                                </span>
+                                            )}
+                                        </div>
                                         <span className="text-[10px] font-mono text-zinc-500 truncate mt-0.5">
                                             {c.domain_name.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                                         </span>
@@ -179,7 +226,37 @@ export default function EventsPage() {
                             {clientSearch ? 'No clients match your search.' : 'No active clients.'}
                         </div>
                     )}
+
                 </div>
+
+                {/* ── Sidebar Pagination ── */}
+                {clientsTotalPages > 1 && (
+                    <div className="p-3 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
+                        <button
+                            disabled={clientsPage === 1}
+                            onClick={() => {
+                                setClientsPage(p => Math.max(1, p - 1))
+                                if (selectedClient) navigate('/events')
+                            }}
+                            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                            {clientsPage} / {clientsTotalPages}
+                        </span>
+                        <button
+                            disabled={clientsPage === clientsTotalPages}
+                            onClick={() => {
+                                setClientsPage(p => Math.min(clientsTotalPages, p + 1))
+                                if (selectedClient) navigate('/events')
+                            }}
+                            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* ── Right Main Area: Events ── */}
@@ -190,7 +267,10 @@ export default function EventsPage() {
                     <ClientPillBar
                         clients={clients}
                         selectedId={selectedClient}
-                        onSelect={(id) => { setSelectedClient(id); loadEvents(id) }}
+                        onSelect={(id) => {
+                            if (id === selectedClient) navigate('/events')
+                            else navigate(`/events/${id}`)
+                        }}
                         loading={loadingClients}
                     />
                 </div>
@@ -204,17 +284,38 @@ export default function EventsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                             {selectedClient && (
-                                <button onClick={() => navigate(`/events/${selectedClient}/new`)} className="btn-primary flex items-center gap-1.5">
-                                    <Plus size={14} /> New Event
-                                </button>
+                                <>
+                                    <div className="relative">
+                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search events..."
+                                            className="input-field h-9 pl-9 pr-8 w-48 sm:w-64"
+                                            value={eventSearch}
+                                            onChange={e => setEventSearch(e.target.value)}
+                                        />
+                                        {eventSearch && (
+                                            <button
+                                                onClick={() => setEventSearch('')}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                                                title="Clear search"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <button onClick={() => navigate(`/events/${selectedClient}/new`)} className="btn-primary h-9 flex items-center justify-center gap-1.5 px-3">
+                                        <Plus size={16} /> <span className="hidden sm:inline">New Event</span>
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>
 
                     {!selectedClient && !loadingClients && (
-                        <div className="card py-16 text-center border-dashed bg-transparent flex flex-col items-center justify-center">
-                            <div className="w-12 h-12 rounded-xl bg-[#e5e7eb] dark:bg-zinc-800 flex items-center justify-center mb-3">
-                                <CalendarDays size={24} className="text-zinc-500 dark:text-zinc-400" />
+                        <div className="py-20 text-center border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-[#18181b]/50 rounded-2xl flex flex-col items-center justify-center w-full max-w-2xl mx-auto mt-8">
+                            <div className="w-14 h-14 rounded-2xl bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700 flex items-center justify-center mb-4">
+                                <CalendarDays size={26} className="text-zinc-400 dark:text-zinc-500" />
                             </div>
                             <h3 className="text-base font-medium text-zinc-800 dark:text-zinc-100 mb-1">Select a Client</h3>
                             <p className="text-zinc-600 dark:text-zinc-500 text-sm max-w-xs">
@@ -252,7 +353,7 @@ export default function EventsPage() {
 
                     {!loadingEvents && events.length > 0 && selectedClient && (
                         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {events.map(ev => (
+                            {filteredEvents.map(ev => (
                                 <EventCard
                                     key={ev.id}
                                     event={ev}
@@ -274,6 +375,12 @@ export default function EventsPage() {
                             >
                                 <Plus size={14} /> Create Event
                             </button>
+                        </div>
+                    )}
+
+                    {!loadingEvents && selectedClient && events.length > 0 && filteredEvents.length === 0 && !error && (
+                        <div className="py-12 text-center text-sm text-zinc-500">
+                            No events match your search.
                         </div>
                     )}
                 </div>

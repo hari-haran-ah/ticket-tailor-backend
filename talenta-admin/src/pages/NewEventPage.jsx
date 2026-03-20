@@ -56,7 +56,7 @@ export default function NewEventPage() {
                 <form onSubmit={handleSubmit} className="p-8 space-y-8">
                     {/* Error Message */}
                     {error && (
-                        <div className="p-4 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-black dark:text-white text-sm rounded-xl flex items-center gap-2">
+                        <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-xl flex items-center gap-2">
                             <AlertCircle size={18} /> {error}
                         </div>
                     )}
@@ -180,9 +180,9 @@ export default function NewEventPage() {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-4 pt-6 mt-8 border-t border-gray-300 dark:border-white/10">
-                        <button type="button" onClick={() => navigate(`/events/${clientId}`)} className="btn-secondary px-8 py-3">Cancel</button>
-                        <button disabled={loading} className="btn-primary px-10 py-3 text-sm font-bold shadow-xl">
+                    <div className="flex justify-end gap-2 pt-4 border-t border-zinc-200/60 dark:border-zinc-800/60">
+                        <button type="button" onClick={() => navigate(`/events/${clientId}`)} className="btn-secondary">Cancel</button>
+                        <button disabled={loading} className="btn-primary">
                             {loading ? 'Creating Event...' : 'Create Event'}
                         </button>
                     </div>

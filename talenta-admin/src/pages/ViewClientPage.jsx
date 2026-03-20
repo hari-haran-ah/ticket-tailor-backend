@@ -46,7 +46,7 @@ export default function ViewClientPage() {
             <div className="p-4 md:p-6 space-y-6 max-w-3xl mx-auto">
                 <Skeleton className="w-28 h-4 mb-4" />
                 <Skeleton className="w-48 h-6" />
-                <div className="card p-6 space-y-6 mt-4">
+                <div className="card p-6 space-y-6 mt-4 bg-white dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {[1, 2, 3, 4, 5, 6].map(i => (
                             <div key={i} className="space-y-2">
@@ -66,7 +66,7 @@ export default function ViewClientPage() {
                 <button onClick={() => navigate('/clients')} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 text-xs font-medium transition-colors mb-6">
                     <ChevronLeft size={14} /> Back
                 </button>
-                <div className="text-center py-12 text-zinc-500 card">
+                <div className="text-center py-12 text-zinc-500 card bg-white dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800">
                     {error || 'Client not found.'}
                 </div>
             </div>
@@ -113,14 +113,14 @@ export default function ViewClientPage() {
                 </div>
             </div>
 
-            <div className="card overflow-hidden">
+            <div className="card overflow-hidden bg-white dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800">
                 <div className="p-4 md:p-5">
                     <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-4">Details</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {details.map(({ label, value, icon: Icon, mono }, i) => (
                             <div key={i} className="flex items-start gap-3">
-                                <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 shrink-0">
-                                    <Icon size={14} />
+                                <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-100 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0">
+                                    <Icon size={16} />
                                 </div>
                                 <div className="overflow-hidden">
                                     <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide">{label}</p>

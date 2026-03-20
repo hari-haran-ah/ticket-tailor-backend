@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from typing import List
+from typing import List, Optional
 
 from core.deps import get_current_admin
 from db.session import get_db
@@ -25,12 +25,17 @@ def list_clients_paginated(
     page: int = 1,
     size: int = 5,
     search: str = "",
+    is_active: Optional[bool] = None,
     sort_by: str = "created_at",
     sort_order: str = "desc",
     db: Session = Depends(get_db),
     _: Admin = Depends(get_current_admin),
 ):
     query = db.query(Client)
+    
+    if is_active is not None:
+        query = query.filter(Client.is_active == is_active)
+        
     if search:
         search_term = f"%{search}%"
         query = query.filter(

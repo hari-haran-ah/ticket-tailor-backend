@@ -9,7 +9,7 @@ class ClientBase(BaseModel):
     name: str
     domain_name: str
     tt_api_key: str
-    stripe_account_id: Optional[str] = None
+    stripe_account_id: str
     platform_fee: Decimal = Decimal("0.00")
     contact_email: Optional[EmailStr] = None
     contact_phone: Optional[str] = None
@@ -33,8 +33,8 @@ class ClientBase(BaseModel):
 
     @field_validator("stripe_account_id")
     @classmethod
-    def validate_stripe_id(cls, v: Optional[str]) -> Optional[str]:
-        if v and not v.startswith("acct_"):
+    def validate_stripe_id(cls, v: str) -> str:
+        if not v.startswith("acct_"):
             raise ValueError("Stripe Account ID must start with 'acct_'")
         return v
 

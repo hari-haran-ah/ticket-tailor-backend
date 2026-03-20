@@ -32,7 +32,7 @@ export default function NewClientPage() {
         if (form.tt_api_key && !form.tt_api_key.startsWith('sk_')) {
             setError('TT API Key must start with sk_'); setLoading(false); return
         }
-        if (form.stripe_account_id && !form.stripe_account_id.startsWith('acct_')) {
+        if (!form.stripe_account_id.startsWith('acct_')) {
             setError('Stripe Account ID must start with acct_'); setLoading(false); return
         }
         const fee = parseFloat(form.platform_fee)
@@ -65,7 +65,7 @@ export default function NewClientPage() {
         { key: 'name', label: 'Client Name', icon: Users, type: 'text', required: true, desc: 'The legal or display name of the client organization.' },
         { key: 'domain_name', label: 'Domain Name', icon: Globe, type: 'text', required: true, placeholder: 'https://client.yourdomain.com', desc: 'The primary web domain for this client.' },
         { key: 'tt_api_key', label: 'TicketTailor API Key', icon: Key, type: 'text', required: true, placeholder: 'sk_...', desc: 'Secret API key used to sync events from TicketTailor.' },
-        { key: 'stripe_account_id', label: 'Stripe Account ID', icon: DollarSign, type: 'text', placeholder: 'acct_...', desc: 'Used for Stripe Connect routed payments.' },
+        { key: 'stripe_account_id', label: 'Stripe Account ID', icon: DollarSign, type: 'text', required: true, placeholder: 'acct_...', desc: 'Used for Stripe Connect routed payments.' },
         { key: 'platform_fee', label: 'Platform Fee %', icon: DollarSign, type: 'number', required: true, step: '0.01', min: '0', max: '100', desc: 'Percentage cut taken by the platform per sale.' },
         { key: 'contact_email', label: 'Contact Email', icon: Mail, type: 'email', desc: 'Primary support or administrative contact email.' },
         { key: 'contact_phone', label: 'Contact Phone', icon: Phone, type: 'text', desc: 'Primary administrative contact phone number.' },
@@ -136,9 +136,9 @@ export default function NewClientPage() {
                         </label>
                     </div>
 
-                    <div className="flex justify-end gap-4 pt-6 mt-8 border-t border-gray-300 dark:border-white/10">
-                        <button type="button" onClick={() => navigate('/clients')} className="btn-secondary px-8 py-3">Cancel</button>
-                        <button disabled={loading} className="btn-primary px-10 py-3 text-sm font-bold shadow-xl">
+                    <div className="flex justify-end gap-2 pt-4 border-t border-zinc-200/60 dark:border-zinc-800/60">
+                        <button type="button" onClick={() => navigate('/clients')} className="btn-secondary">Cancel</button>
+                        <button disabled={loading} className="btn-primary">
                             {loading ? 'Registering...' : 'Register Client'}
                         </button>
                     </div>

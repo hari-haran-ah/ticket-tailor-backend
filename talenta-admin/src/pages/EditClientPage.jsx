@@ -57,7 +57,7 @@ export default function EditClientPage() {
         if (form.tt_api_key && !form.tt_api_key.startsWith('sk_')) {
             setError('TT API Key must start with sk_'); setLoading(false); return
         }
-        if (form.stripe_account_id && !form.stripe_account_id.startsWith('acct_')) {
+        if (!form.stripe_account_id.startsWith('acct_')) {
             setError('Stripe Account ID must start with acct_'); setLoading(false); return
         }
         const fee = parseFloat(form.platform_fee)
@@ -89,7 +89,7 @@ export default function EditClientPage() {
         { key: 'name', label: 'Client Name', icon: Users, type: 'text', required: true },
         { key: 'domain_name', label: 'Domain', icon: Globe, type: 'text', required: true, placeholder: 'https://...' },
         { key: 'tt_api_key', label: 'TicketTailor API Key', icon: Key, type: 'text', required: true, placeholder: 'sk_...' },
-        { key: 'stripe_account_id', label: 'Stripe Account ID', icon: DollarSign, type: 'text', placeholder: 'acct_...' },
+        { key: 'stripe_account_id', label: 'Stripe Account ID', icon: DollarSign, type: 'text', required: true, placeholder: 'acct_...' },
         { key: 'platform_fee', label: 'Platform Fee %', icon: DollarSign, type: 'number', required: true, step: '0.01', min: '0', max: '100' },
         { key: 'contact_email', label: 'Contact Email', icon: Mail, type: 'email' },
         { key: 'contact_phone', label: 'Contact Phone', icon: Phone, type: 'text' },
