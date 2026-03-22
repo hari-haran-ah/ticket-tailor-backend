@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,28 +10,36 @@
 @layer base {
   :root {
     /* Page - dimmed for eye comfort */
-    --background: 240 3% 90%;              /* #e8e8ea - dimmed */
-    --foreground: 220 13% 10%;           /* #111827 */
+    --background: 240 3% 90%;
+    /* #e8e8ea - dimmed */
+    --foreground: 220 13% 10%;
+    /* #111827 */
 
     /* Cards / Surfaces - dimmed */
-    --card: 240 3% 94%;                   /* #f0f0f2 - dimmed */
-    --card-foreground: 220 13% 10%;      /* #111827 */
+    --card: 240 3% 94%;
+    /* #f0f0f2 - dimmed */
+    --card-foreground: 220 13% 10%;
+    /* #111827 */
 
     /* Popover - dimmed */
     --popover: 240 3% 94%;
     --popover-foreground: 220 13% 10%;
 
     /* Primary accent */
-    --primary: 239 84% 67%;              /* #6366f1 — indigo */
+    --primary: 239 84% 67%;
+    /* #6366f1 — indigo */
     --primary-foreground: 0 0% 100%;
 
     /* Secondary */
-    --secondary: 220 14% 96%;            /* #f3f4f6 */
+    --secondary: 220 14% 96%;
+    /* #f3f4f6 */
     --secondary-foreground: 220 13% 10%;
 
     /* Muted */
-    --muted: 220 14% 96%;               /* #f3f4f6 */
-    --muted-foreground: 220 9% 46%;     /* #6b7280 */
+    --muted: 220 14% 96%;
+    /* #f3f4f6 */
+    --muted-foreground: 220 9% 46%;
+    /* #6b7280 */
 
     /* Accent */
     --accent: 220 14% 96%;
@@ -42,9 +50,11 @@
     --destructive-foreground: 0 0% 98%;
 
     /* Borders & Inputs */
-    --border: 220 13% 91%;              /* #e5e7eb */
+    --border: 220 13% 91%;
+    /* #e5e7eb */
     --input: 220 13% 91%;
-    --ring: 239 84% 67%;                /* indigo ring */
+    --ring: 239 84% 67%;
+    /* indigo ring */
 
     /* Chart colors */
     --chart-1: 239 84% 67%;
@@ -54,7 +64,8 @@
     --chart-5: 271 81% 56%;
 
     /* Sidebar */
-    --sidebar-background: 210 20% 98%;  /* #f9fafb */
+    --sidebar-background: 210 20% 98%;
+    /* #f9fafb */
     --sidebar-foreground: 220 13% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-accent: 220 14% 96%;
@@ -66,11 +77,14 @@
 
   .dark {
     /* Page — solid black like the reference */
-    --background: 240 6% 6%;             /* #0e0e12 — near-black */
-    --foreground: 0 0% 100%;             /* #ffffff */
+    --background: 240 6% 6%;
+    /* #0e0e12 — near-black */
+    --foreground: 0 0% 100%;
+    /* #ffffff */
 
     /* Cards / Surfaces — dark gray like the reference */
-    --card: 240 10% 10%;                 /* #161621 */
+    --card: 240 10% 10%;
+    /* #161621 */
     --card-foreground: 0 0% 100%;
 
     /* Popover */
@@ -78,16 +92,19 @@
     --popover-foreground: 0 0% 100%;
 
     /* Primary accent */
-    --primary: 239 84% 67%;              /* #6366f1 */
+    --primary: 239 84% 67%;
+    /* #6366f1 */
     --primary-foreground: 0 0% 100%;
 
     /* Secondary */
-    --secondary: 240 8% 14%;             /* #1f2030 */
+    --secondary: 240 8% 14%;
+    /* #1f2030 */
     --secondary-foreground: 0 0% 100%;
 
     /* Muted */
     --muted: 240 8% 14%;
-    --muted-foreground: 218 11% 65%;     /* #9ca3af */
+    --muted-foreground: 218 11% 65%;
+    /* #9ca3af */
 
     /* Accent */
     --accent: 240 8% 14%;
@@ -98,8 +115,10 @@
     --destructive-foreground: 0 0% 98%;
 
     /* Borders & Inputs — subtle visible gray borders */
-    --border: 240 5% 18%;               /* subtle gray border */
-    --input: 240 8% 16%;                /* gray input bg */
+    --border: 240 5% 18%;
+    /* subtle gray border */
+    --input: 240 8% 16%;
+    /* gray input bg */
     --ring: 239 84% 67%;
 
     /* Chart colors */
@@ -110,7 +129,8 @@
     --chart-5: 340 65% 50%;
 
     /* Sidebar — slightly lighter than page bg */
-    --sidebar-background: 240 10% 9%;    /* #141420 */
+    --sidebar-background: 240 10% 9%;
+    /* #141420 */
     --sidebar-foreground: 0 0% 100%;
     --sidebar-border: 240 5% 16%;
     --sidebar-accent: 240 5% 16%;
@@ -152,7 +172,7 @@
   }
 
   body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
@@ -230,7 +250,11 @@
 
   /* ── Card ──────────────────────────────────────────────────── */
   .card {
-    @apply bg-white dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl shadow-sm transition-colors duration-150;
+    @apply bg-white dark:bg-[#0a0a0a] border border-[#E2E5E9] dark:border-zinc-800 text-[#111827] dark:text-zinc-100 rounded-xl transition-colors duration-150;
+  }
+
+  html:not(.dark) .card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   }
 
   /* ── Primary button ────────────────────────────────────────── */
@@ -384,7 +408,7 @@
 
   /* ── Input field ───────────────────────────────────────────── */
   .input-field {
-    @apply w-full rounded-lg px-3 py-2 text-sm bg-white dark:bg-transparent border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors duration-200;
+    @apply w-full rounded-lg px-3 py-2 text-sm bg-white dark:bg-transparent border border-[#E2E5E9] dark:border-zinc-800 text-[#111827] dark:text-zinc-100 placeholder:text-[#9CA3AF] focus:outline-none focus:border-black focus:ring-0 dark:focus:border-white transition-all duration-200;
   }
 
   /* ── Autofill overrides ────────────────────────────────────── */

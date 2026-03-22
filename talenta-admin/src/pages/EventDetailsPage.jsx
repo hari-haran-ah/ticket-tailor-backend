@@ -122,7 +122,7 @@ export default function EventDetailsPage() {
     }
 
     if (loading) return (
-        <div className="h-screen flex flex-col overflow-hidden">
+        <div className="h-screen flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0a]">
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in pb-12">
                     {/* Header Skeleton */}
@@ -207,8 +207,8 @@ export default function EventDetailsPage() {
     )
 
     if (!event) return (
-        <div className="p-10 text-center">
-            <AlertCircle size={48} className="mx-auto mb-4 text-white/20" />
+        <div className="p-10 text-center bg-white dark:bg-[#0a0a0a] min-h-screen">
+            <AlertCircle size={48} className="mx-auto mb-4 text-gray-400 dark:text-white/20" />
             <p className="text-white font-semibold text-lg mb-6">Event not found</p>
             <Link to="/events" className="btn-secondary inline-flex items-center gap-2">
                 <ChevronLeft size={16} /> Back to Events
@@ -223,7 +223,7 @@ export default function EventDetailsPage() {
     }[event.status] || 'badge-draft'
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden">
+        <div className="h-screen flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0a]">
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 <div className="p-8 max-w-7xl mx-auto space-y-8 pb-12">
                     {/* Header */}
@@ -268,7 +268,7 @@ export default function EventDetailsPage() {
                                         <div className="space-y-1.5">
                                             <label className="label">Event Name</label>
                                             <input
-                                                className="input-field"
+                                                className="input-field md:text-[15px]"
                                                 value={formData.name}
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                                 required
@@ -278,7 +278,7 @@ export default function EventDetailsPage() {
                                             <div className="space-y-1.5">
                                                 <label className="label">Status</label>
                                                 <select
-                                                    className="input-field appearance-none"
+                                                    className="input-field appearance-none md:text-[15px]"
                                                     value={formData.status}
                                                     onChange={e => setFormData({ ...formData, status: e.target.value })}
                                                 >
@@ -291,7 +291,7 @@ export default function EventDetailsPage() {
                                         <div className="space-y-1.5">
                                             <label className="label">Description</label>
                                             <textarea
-                                                className="input-field min-h-[180px] max-h-[300px] resize-y custom-scrollbar"
+                                                className="input-field min-h-[180px] max-h-[300px] resize-y custom-scrollbar md:text-[15px]"
                                                 value={formData.description}
                                                 onChange={e => setFormData({ ...formData, description: e.target.value })}
                                             />
@@ -327,7 +327,7 @@ export default function EventDetailsPage() {
                                                     <label className="label">Venue Name</label>
                                                     <input
                                                         disabled={formData.online_event}
-                                                        className="input-field disabled:opacity-30 disabled:cursor-not-allowed"
+                                                        className="input-field disabled:opacity-30 disabled:cursor-not-allowed md:text-[15px]"
                                                         placeholder="e.g. ExCeL London"
                                                         value={formData.venue_name}
                                                         onChange={e => setFormData({ ...formData, venue_name: e.target.value })}
@@ -337,7 +337,7 @@ export default function EventDetailsPage() {
                                                     <label className="label">Postal Code</label>
                                                     <input
                                                         disabled={formData.online_event}
-                                                        className="input-field disabled:opacity-30 disabled:cursor-not-allowed"
+                                                        className="input-field disabled:opacity-30 disabled:cursor-not-allowed md:text-[15px]"
                                                         placeholder="e.g. E16 1XL"
                                                         value={formData.postal_code}
                                                         onChange={e => setFormData({ ...formData, postal_code: e.target.value })}
@@ -347,7 +347,7 @@ export default function EventDetailsPage() {
                                                     <label className="label">Country</label>
                                                     <select
                                                         disabled={formData.online_event}
-                                                        className="input-field appearance-none disabled:opacity-30 disabled:cursor-not-allowed"
+                                                        className="input-field appearance-none disabled:opacity-30 disabled:cursor-not-allowed md:text-[15px]"
                                                         value={formData.country}
                                                         onChange={e => setFormData({ ...formData, country: e.target.value })}
                                                     >
@@ -360,9 +360,9 @@ export default function EventDetailsPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-300 dark:border-white/10">
-                                            <button type="button" onClick={() => setEditMode(false)} className="btn-secondary px-6">Cancel</button>
-                                            <button type="submit" disabled={isSaving} className="btn-primary px-8">
+                                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-300 dark:border-white/10">
+                                            <button type="button" onClick={() => setEditMode(false)} className="btn-secondary text-xs py-1.5 px-4">Cancel</button>
+                                            <button type="submit" disabled={isSaving} className="btn-primary text-xs py-1.5 px-5">
                                                 {isSaving ? 'Saving...' : 'Save Changes'}
                                             </button>
                                         </div>

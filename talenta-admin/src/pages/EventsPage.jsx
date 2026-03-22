@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import api from '../lib/api'
 import {
     CalendarDays, AlertCircle, Clock, Plus, Settings, X,
@@ -81,13 +81,19 @@ function EventCard({ event, clientId, onManage }) {
 export default function EventsPage() {
     const navigate = useNavigate()
     const { clientId: urlClientId } = useParams()
+    const location = useLocation()
+    const isIsolated = location.state?.isolated || false
+
     const [clients, setClients] = useState([])
     const [clientsPage, setClientsPage] = useState(1)
     const [clientsTotalPages, setClientsTotalPages] = useState(1)
+    const [clientsTotalItems, setClientsTotalItems] = useState(0)
     const [clientSearch, setClientSearch] = useState('')
     const [debouncedClientSearch, setDebouncedClientSearch] = useState('')
+    const currentClientsFetchRef = useRef(0)
 
     const [selectedClient, setSelectedClient] = useState('')
+    const [clientDetail, setClientDetail] = useState(null)
     const [events, setEvents] = useState([])
     const [loadingClients, setLoadingClients] = useState(true)
     const [loadingEvents, setLoadingEvents] = useState(false)
@@ -97,20 +103,37 @@ export default function EventsPage() {
 
     // Debounce client search
     useEffect(() => {
-        const timer = setTimeout(() => { setDebouncedClientSearch(clientSearch); setClientsPage(1) }, 400)
+        const timer = setTimeout(() => { 
+            setDebouncedClientSearch(prev => {
+                if (prev !== clientSearch) {
+                    setClientsPage(1)
+                    return clientSearch
+                }
+                return prev
+            })
+        }, 400)
         return () => clearTimeout(timer)
     }, [clientSearch])
 
     const loadClients = async () => {
+        const fetchId = Date.now()
+        currentClientsFetchRef.current = fetchId
         setLoadingClients(true)
         try {
             const { data } = await api.get(`/api/clients/paginated?page=${clientsPage}&size=6&search=${debouncedClientSearch}&sort_by=created_at&sort_order=desc`)
-            setClients(data.items || [])
-            setClientsTotalPages(data.pages || 1)
+            if (currentClientsFetchRef.current === fetchId) {
+                setClients(data.items || [])
+                setClientsTotalPages(data.pages || 1)
+                setClientsTotalItems(data.total || 0)
+            }
         } catch (err) {
-            console.error('Failed to load clients', err)
+            if (currentClientsFetchRef.current === fetchId) {
+                console.error('Failed to load clients', err)
+            }
         } finally {
-            setLoadingClients(false)
+            if (currentClientsFetchRef.current === fetchId) {
+                setLoadingClients(false)
+            }
         }
     }
 
@@ -119,11 +142,19 @@ export default function EventsPage() {
     }, [clientsPage, debouncedClientSearch])
 
     useEffect(() => {
-        if (urlClientId && urlClientId !== selectedClient) {
-            setSelectedClient(urlClientId)
-            loadEvents(urlClientId)
+        const newClientId = urlClientId || ''
+        if (newClientId !== selectedClient) {
+            setSelectedClient(newClientId)
+            if (newClientId) {
+                loadEvents(newClientId)
+            } else {
+                setEvents([])
+                setEventSearch('')
+                setError('')
+                setClientDetail(null)
+            }
         }
-    }, [urlClientId])
+    }, [urlClientId, selectedClient])
 
     const currentFetchRef = useRef(0)
 
@@ -133,11 +164,15 @@ export default function EventsPage() {
         const fetchId = Date.now()
         currentFetchRef.current = fetchId
 
-        setLoadingEvents(true); setError(''); setEvents([])
+        setLoadingEvents(true); setError(''); setEvents([]); setClientDetail(null);
         try {
-            const { data } = await api.get(`/api/tt/${clientId}/events`)
+            const [clientRes, eventsRes] = await Promise.all([
+                api.get(`/api/clients/${clientId}`).catch(() => ({ data: null })),
+                api.get(`/api/tt/${clientId}/events`)
+            ])
             if (currentFetchRef.current === fetchId) {
-                setEvents(data.data?.data || [])
+                if (clientRes.data) setClientDetail(clientRes.data)
+                setEvents(eventsRes.data.data?.data || [])
             }
         } catch (e) {
             if (currentFetchRef.current === fetchId) {
@@ -162,135 +197,154 @@ export default function EventsPage() {
     )
 
     return (
-        <div className="flex flex-col md:flex-row h-full overflow-hidden bg-[#e8e8ea] dark:bg-[#0a0a0a]">
+        <div className="flex flex-col md:flex-row h-full overflow-hidden bg-white dark:bg-[#0a0a0a]">
 
             {/* ── Desktop Left Sidebar: Clients List - Theme Aware ── */}
-            <div className="hidden md:flex flex-col flex-shrink-0 w-64 lg:w-72 3xl:w-80 4xl:w-96 border-r border-zinc-200 dark:border-zinc-700 bg-[#f0f0f2] dark:bg-[#18181b] h-full">
-                <div className="p-4 3xl:p-5 border-b border-zinc-200 dark:border-zinc-700">
-                    <h2 className="text-xs 3xl:text-sm font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">Select Client</h2>
-                    <div className="relative mt-3 3xl:mt-4">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            className="input-field pl-9 3xl:text-base 3xl:py-2.5"
-                            value={clientSearch}
-                            onChange={(e) => setClientSearch(e.target.value)}
-                        />
+            {(!selectedClient || !isIsolated) && (
+                <div className="hidden md:flex flex-col flex-shrink-0 w-64 lg:w-72 3xl:w-80 4xl:w-96 border-r border-[#E2E5E9] dark:border-zinc-700 bg-white dark:bg-[#262626] h-full">
+                    <div className="p-4 3xl:p-5 border-b border-[#E2E5E9] dark:border-zinc-700">
+                        <div className="flex items-center justify-between mb-3 3xl:mb-4">
+                            <h2 className="text-xs 3xl:text-sm font-medium text-[#6B7280] dark:text-zinc-400 uppercase tracking-wider">Select Client</h2>
+                            {!loadingClients && (
+                                <span className="text-xs font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-400 px-2 py-0.5 rounded-full">
+                                    {clientsTotalItems} Total
+                                </span>
+                            )}
+                        </div>
+                        <div className="relative mt-1">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                className="input-field pl-9 md:text-[15px] 3xl:py-2.5"
+                                value={clientSearch}
+                                onChange={(e) => setClientSearch(e.target.value)}
+                            />
+                        </div>
                     </div>
-                </div>
 
-                <div className="flex-1 overflow-y-auto p-2 3xl:p-3 space-y-0.5 3xl:space-y-1">
-                    {loadingClients ? (
-                        Array.from({ length: 5 }).map((_, i) => (
-                            <div key={i} className="p-3 3xl:p-4 rounded-lg">
-                                <Skeleton className="w-3/4 h-4 3xl:h-5 mb-2" />
-                                <Skeleton className="w-1/2 h-3 3xl:h-4" />
-                            </div>
-                        ))
-                    ) : clients.length > 0 ? (
-                        clients.map(c => {
-                            const isSelected = selectedClient === c.id.toString()
-                            return (
-                                <button
-                                    key={c.id}
-                                    onClick={() => {
-                                        if (isSelected) navigate('/events')
-                                        else navigate(`/events/${c.id}`)
-                                    }}
-                                    className={`w-full text-left p-3 3xl:p-4 rounded-lg flex items-center justify-between transition-all ${isSelected
-                                            ? 'bg-zinc-200 dark:bg-zinc-800'
-                                            : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50'
-                                        }`}
-                                >
-                                    <div className="flex flex-col overflow-hidden pr-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-sm 3xl:text-base truncate ${isSelected ? 'font-medium text-zinc-900 dark:text-zinc-100' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                                                {formatName(c.name)}
-                                            </span>
-                                            {!c.is_active && (
-                                                <span className="shrink-0 text-[9px] 3xl:text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-bold">
-                                                    Inactive
+                    <div className="flex-1 overflow-y-auto p-2 3xl:p-3 space-y-0.5 3xl:space-y-1">
+                        {loadingClients ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <div key={i} className="p-3 3xl:p-4 rounded-lg">
+                                    <Skeleton className="w-3/4 h-4 3xl:h-5 mb-2" />
+                                    <Skeleton className="w-1/2 h-3 3xl:h-4" />
+                                </div>
+                            ))
+                        ) : clients.length > 0 ? (
+                            clients.map(c => {
+                                const isSelected = selectedClient === c.id.toString()
+                                return (
+                                    <button
+                                        key={c.id}
+                                        onClick={() => {
+                                            if (isSelected) navigate('/events')
+                                            else navigate(`/events/${c.id}`)
+                                        }}
+                                        className={`w-full text-left p-3 3xl:p-4 transition-all duration-200 border
+                                            ${isSelected
+                                                ? 'bg-white shadow-sm dark:bg-zinc-800 border-black dark:border-zinc-100 rounded-lg text-[#111827] dark:text-white my-1'
+                                                : 'bg-transparent border-transparent hover:bg-[#F9FAFB] dark:hover:bg-zinc-800/50 rounded-lg'
+                                            }`}
+                                    >
+                                        <div className="flex flex-col overflow-hidden pr-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-sm 3xl:text-base truncate ${isSelected ? 'font-medium text-[#111827] dark:text-zinc-100' : 'text-[#6B7280] dark:text-zinc-300'}`}>
+                                                    {formatName(c.name)}
                                                 </span>
-                                            )}
+                                                {!c.is_active && (
+                                                    <span className="shrink-0 text-[9px] 3xl:text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-800/50">
+                                                        Inactive
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className="text-[10px] 3xl:text-xs font-mono text-[#9CA3AF] truncate mt-0.5">
+                                                {c.domain_name.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                                            </span>
                                         </div>
-                                        <span className="text-[10px] 3xl:text-xs font-mono text-zinc-500 truncate mt-0.5">
-                                            {c.domain_name.replace(/^https?:\/\//, '').replace(/\/$/, '')}
-                                        </span>
-                                    </div>
-                                </button>
-                            )
-                        })
-                    ) : (
-                        <div className="p-4 text-center text-xs 3xl:text-sm text-zinc-500">
-                            {clientSearch ? 'No clients match your search.' : 'No active clients.'}
+                                    </button>
+                                )
+                            })
+                        ) : (
+                            <div className="p-4 text-center text-xs 3xl:text-sm text-zinc-500">
+                                {clientSearch ? 'No clients match your search.' : 'No active clients.'}
+                            </div>
+                        )}
+
+                    </div>
+
+                    {/* ── Sidebar Pagination ── */}
+                    {clientsTotalPages > 1 && (
+                        <div className="p-3 border-t border-[#E2E5E9] dark:border-zinc-700 flex items-center justify-between">
+                            <button
+                                disabled={clientsPage === 1}
+                                onClick={() => {
+                                    setClientsPage(p => Math.max(1, p - 1))
+                                    if (selectedClient) navigate('/events')
+                                }}
+                                className="p-1.5 rounded-lg text-zinc-500 hover:text-[#0a0a0a] dark:hover:text-zinc-100 hover:bg-[#f5f5f5] dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                                {clientsPage} / {clientsTotalPages}
+                            </span>
+                            <button
+                                disabled={clientsPage === clientsTotalPages}
+                                onClick={() => {
+                                    setClientsPage(p => Math.min(clientsTotalPages, p + 1))
+                                    if (selectedClient) navigate('/events')
+                                }}
+                                className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
                         </div>
                     )}
-
                 </div>
-
-                {/* ── Sidebar Pagination ── */}
-                {clientsTotalPages > 1 && (
-                    <div className="p-3 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
-                        <button
-                            disabled={clientsPage === 1}
-                            onClick={() => {
-                                setClientsPage(p => Math.max(1, p - 1))
-                                if (selectedClient) navigate('/events')
-                            }}
-                            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        >
-                            <ChevronLeft size={16} />
-                        </button>
-                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                            {clientsPage} / {clientsTotalPages}
-                        </span>
-                        <button
-                            disabled={clientsPage === clientsTotalPages}
-                            onClick={() => {
-                                setClientsPage(p => Math.min(clientsTotalPages, p + 1))
-                                if (selectedClient) navigate('/events')
-                            }}
-                            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        >
-                            <ChevronRight size={16} />
-                        </button>
-                    </div>
-                )}
-            </div>
+            )}
 
             {/* ── Right Main Area: Events ── */}
             <div className="flex-1 flex flex-col h-full overflow-hidden">
                 {/* Mobile Client selector - Theme Aware */}
-                <div className="md:hidden p-4 border-b border-zinc-200 dark:border-zinc-700 bg-[#f0f0f2] dark:bg-[#18181b]">
-                    <p className="text-zinc-600 dark:text-zinc-400 text-xs uppercase tracking-wider font-medium mb-2">Select Client</p>
-                    <ClientPillBar
-                        clients={clients}
-                        selectedId={selectedClient}
-                        onSelect={(id) => {
-                            if (id === selectedClient) navigate('/events')
-                            else navigate(`/events/${id}`)
-                        }}
-                        loading={loadingClients}
-                    />
-                </div>
+                {(!selectedClient || !isIsolated) && (
+                    <div className="md:hidden p-4 border-b border-[#E2E5E9] dark:border-zinc-700 bg-[#F5F5F5] dark:bg-[#262626]">
+                        <p className="text-[#6B7280] dark:text-zinc-400 text-xs uppercase tracking-wider font-medium mb-2">Select Client</p>
+                        <ClientPillBar
+                            clients={clients}
+                            selectedId={selectedClient}
+                            onSelect={(id) => {
+                                if (id === selectedClient) navigate('/events')
+                                else navigate(`/events/${id}`)
+                            }}
+                            loading={loadingClients}
+                        />
+                    </div>
+                )}
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 3xl:p-8 space-y-6 3xl:space-y-8">
                     {/* Page Title + Actions Row */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-xl 3xl:text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Events</h1>
-                            <p className="text-zinc-500 dark:text-zinc-400 text-sm 3xl:text-base mt-0.5">Manage events for selected client</p>
+                            <h1 className="text-xl 3xl:text-2xl font-semibold text-[#111827] dark:text-zinc-100 flex items-center gap-2">
+                                {clientDetail ? clientDetail.name : 'Events'}
+                            </h1>
+                            <p className="text-[#6B7280] dark:text-zinc-400 text-sm 3xl:text-base mt-0.5">
+                                {clientDetail ? `Manage events for ${clientDetail.domain_name}` : 'Select a client to manage their events'}
+                            </p>
                         </div>
                         <div className="flex items-center gap-2 3xl:gap-3">
                             {selectedClient && (
                                 <>
+                                    {isIsolated && (
+                                        <button onClick={() => navigate('/events')} className="btn-secondary h-9 3xl:h-10 px-3 sm:px-4">Clear Selection</button>
+                                    )}
                                     <div className="relative">
                                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
                                         <input
                                             type="text"
                                             placeholder="Search events..."
-                                            className="input-field h-9 3xl:h-10 pl-9 pr-8 w-48 sm:w-64 3xl:w-80 3xl:text-base"
+                                            className="input-field h-9 3xl:h-10 pl-9 pr-8 w-48 sm:w-64 3xl:w-80 md:text-[15px]"
                                             value={eventSearch}
                                             onChange={e => setEventSearch(e.target.value)}
                                         />
@@ -313,12 +367,12 @@ export default function EventsPage() {
                     </div>
 
                     {!selectedClient && !loadingClients && (
-                        <div className="py-20 text-center border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-[#18181b]/50 rounded-2xl flex flex-col items-center justify-center w-full max-w-2xl mx-auto mt-8">
-                            <div className="w-14 h-14 rounded-2xl bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700 flex items-center justify-center mb-4">
-                                <CalendarDays size={26} className="text-zinc-400 dark:text-zinc-500" />
+                        <div className="py-20 text-center border-2 border-dashed border-[#D1D5DB] dark:border-zinc-700 bg-white dark:bg-[#262626]/50 rounded-2xl flex flex-col items-center justify-center w-full max-w-2xl mx-auto mt-8">
+                            <div className="w-14 h-14 rounded-2xl bg-[#F3F4F6] border-none dark:bg-zinc-800 shadow-sm flex items-center justify-center mb-4">
+                                <CalendarDays size={26} className="text-[#9CA3AF] dark:text-zinc-500" />
                             </div>
-                            <h3 className="text-base font-medium text-zinc-800 dark:text-zinc-100 mb-1">Select a Client</h3>
-                            <p className="text-zinc-600 dark:text-zinc-500 text-sm max-w-xs">
+                            <h3 className="text-base font-medium text-[#111827] dark:text-zinc-100 mb-1">Select a Client</h3>
+                            <p className="text-[#6B7280] dark:text-zinc-500 text-sm max-w-xs">
                                 Choose a client to view and manage their events.
                             </p>
                         </div>
@@ -365,10 +419,10 @@ export default function EventsPage() {
                     )}
 
                     {!loadingEvents && selectedClient && events.length === 0 && !error && (
-                        <div className="card py-16 text-center border-dashed bg-transparent">
-                            <CalendarDays size={36} className="mx-auto mb-3 text-zinc-400 dark:text-zinc-600" />
-                            <p className="text-zinc-800 dark:text-zinc-100 font-medium">No events found</p>
-                            <p className="text-zinc-600 dark:text-zinc-500 text-sm mt-1">Create your first event to get started.</p>
+                        <div className="card py-16 text-center border-dashed border-[#D1D5DB] bg-white">
+                            <CalendarDays size={36} className="mx-auto mb-3 text-[#9CA3AF] dark:text-zinc-600" />
+                            <p className="text-[#111827] dark:text-zinc-100 font-medium">No events found</p>
+                            <p className="text-[#6B7280] dark:text-zinc-500 text-sm mt-1">Create your first event to get started.</p>
                             <button
                                 onClick={() => navigate(`/events/${selectedClient}/new`)}
                                 className="mt-4 btn-primary inline-flex items-center gap-1.5"

@@ -66,7 +66,7 @@ export default function NewEventPage() {
                             <label className="label">Event Name</label>
                             <input
                                 required
-                                className="input-field max-w-2xl"
+                                className="input-field max-w-2xl md:text-[15px]"
                                 placeholder="e.g. Next-Gen Tech Conference 2026"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -76,7 +76,7 @@ export default function NewEventPage() {
                         <div className="space-y-1.5">
                             <label className="label">Description</label>
                             <textarea
-                                className="input-field min-h-[120px] max-h-[400px] resize-y custom-scrollbar"
+                                className="input-field min-h-[120px] max-h-[400px] resize-y custom-scrollbar md:text-[15px]"
                                 placeholder="A brief description of the event..."
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -89,7 +89,7 @@ export default function NewEventPage() {
                                 <label className="label">Start Date</label>
                                 <input
                                     required type="date"
-                                    className="input-field"
+                                    className="input-field md:text-[15px]"
                                     value={formData.start_date}
                                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                                 />
@@ -98,7 +98,7 @@ export default function NewEventPage() {
                                 <label className="label">Start Time</label>
                                 <input
                                     required type="time"
-                                    className="input-field"
+                                    className="input-field md:text-[15px]"
                                     value={formData.start_time}
                                     onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                                 />
@@ -111,7 +111,7 @@ export default function NewEventPage() {
                                 <label className="label">End Date</label>
                                 <input
                                     required type="date"
-                                    className="input-field"
+                                    className="input-field md:text-[15px]"
                                     value={formData.end_date}
                                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
                                 />
@@ -120,7 +120,7 @@ export default function NewEventPage() {
                                 <label className="label">End Time</label>
                                 <input
                                     required type="time"
-                                    className="input-field"
+                                    className="input-field md:text-[15px]"
                                     value={formData.end_time}
                                     onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                                 />
@@ -135,7 +135,7 @@ export default function NewEventPage() {
                                 <label className="label">Venue Name</label>
                                 <input
                                     disabled={formData.online_event}
-                                    className="input-field disabled:opacity-30"
+                                    className="input-field disabled:opacity-30 md:text-[15px]"
                                     placeholder="e.g. ExCeL London"
                                     value={formData.venue_name}
                                     onChange={(e) => setFormData({ ...formData, venue_name: e.target.value })}
@@ -145,7 +145,7 @@ export default function NewEventPage() {
                                 <label className="label">Postal Code</label>
                                 <input
                                     disabled={formData.online_event}
-                                    className="input-field disabled:opacity-30"
+                                    className="input-field disabled:opacity-30 md:text-[15px]"
                                     placeholder="e.g. E16 1XL"
                                     value={formData.postal_code}
                                     onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
@@ -155,7 +155,7 @@ export default function NewEventPage() {
                                 <label className="label">Country</label>
                                 <select
                                     disabled={formData.online_event}
-                                    className="input-field disabled:opacity-30 appearance-none"
+                                    className="input-field disabled:opacity-30 appearance-none md:text-[15px]"
                                     value={formData.country}
                                     onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                                 >

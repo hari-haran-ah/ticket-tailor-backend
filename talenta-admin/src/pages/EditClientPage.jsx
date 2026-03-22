@@ -98,17 +98,19 @@ export default function EditClientPage() {
 
     if (loadingInit) {
         return (
-            <div className="p-4 md:p-6 space-y-6 max-w-3xl mx-auto">
-                <Skeleton className="w-28 h-4 mb-4" />
-                <Skeleton className="w-48 h-6" />
-                <div className="card p-5 space-y-6 mt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[1, 2, 3, 4, 5, 6].map(i => (
-                            <div key={i} className="space-y-2">
-                                <Skeleton className="w-20 h-3" />
-                                <Skeleton className="w-full h-9" />
-                            </div>
-                        ))}
+            <div className="p-4 md:p-6 lg:p-8 min-h-full h-full overflow-y-auto w-full bg-white dark:bg-[#0a0a0a]">
+                <div className="space-y-6 max-w-3xl mx-auto pb-12">
+                    <Skeleton className="w-28 h-4 mb-4" />
+                    <Skeleton className="w-48 h-6" />
+                    <div className="card p-5 space-y-6 mt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <div key={i} className="space-y-2">
+                                    <Skeleton className="w-20 h-3" />
+                                    <Skeleton className="w-full h-9" />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -116,76 +118,78 @@ export default function EditClientPage() {
     }
 
     return (
-        <div className="p-4 md:p-6 space-y-4 max-w-3xl mx-auto">
-            {/* Header */}
-            <div className="space-y-2 pb-4 border-b border-zinc-200 dark:border-zinc-800">
-                <button onClick={() => navigate('/clients')} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 text-xs font-medium transition-colors">
-                    <ChevronLeft size={14} /> Back
-                </button>
-                <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Edit Client</h1>
-            </div>
+        <div className="p-4 md:p-6 lg:p-8 min-h-full h-full overflow-y-auto w-full bg-white dark:bg-[#0a0a0a]">
+            <div className="max-w-3xl mx-auto space-y-5 md:space-y-6 pb-12">
+                {/* Header */}
+                <div className="space-y-2 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+                    <button onClick={() => navigate('/clients')} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors mb-2">
+                        <ChevronLeft size={14} /> Back
+                    </button>
+                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">Edit Client</h1>
+                </div>
 
-            <div className="card overflow-hidden">
-                <form onSubmit={handleSubmit} className="p-4 md:p-5 space-y-5">
-                    {/* Error Message */}
-                    {error && error !== 'Client not found' && (
-                        <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
-                            <AlertCircle size={16} /> {error}
-                        </div>
-                    )}
+                <div className="card overflow-hidden">
+                    <form onSubmit={handleSubmit} className="p-4 md:p-5 space-y-5">
+                        {/* Error Message */}
+                        {error && error !== 'Client not found' && (
+                            <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
+                                <AlertCircle size={16} /> {error}
+                            </div>
+                        )}
 
-                    {error === 'Client not found' ? (
-                        <div className="text-center py-12 text-zinc-500">
-                            Client not found.
-                        </div>
-                    ) : (
-                        <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {fields.map(({ key, label, icon: Icon, type, required, placeholder }) => (
-                                    <div key={key} className="space-y-1">
-                                        <label className="text-xs font-medium text-zinc-500">
-                                            {label}{required && <span className="text-zinc-900 dark:text-zinc-100 ml-0.5">*</span>}
-                                        </label>
-                                        <div className="relative">
-                                            <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-                                            <input
-                                                type={type}
-                                                className="input-field pl-9"
-                                                placeholder={placeholder || `Enter ${label.toLowerCase()}`}
-                                                value={form[key]}
-                                                onChange={e => setForm({ ...form, [key]: e.target.value })}
-                                                required={required}
-                                                step={key === 'platform_fee' ? '0.01' : undefined}
-                                                min={key === 'platform_fee' ? '0' : undefined}
-                                                max={key === 'platform_fee' ? '100' : undefined}
-                                            />
+                        {error === 'Client not found' ? (
+                            <div className="text-center py-12 text-zinc-500">
+                                Client not found.
+                            </div>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                                    {fields.map(({ key, label, icon: Icon, type, required, placeholder }) => (
+                                        <div key={key} className="space-y-1.5">
+                                            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 block">
+                                                {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+                                            </label>
+                                            <div className="relative">
+                                                <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                                                <input
+                                                    type={type}
+                                                    className="input-field pl-9 md:text-[15px]"
+                                                    placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+                                                    value={form[key]}
+                                                    onChange={e => setForm({ ...form, [key]: e.target.value })}
+                                                    required={required}
+                                                    step={key === 'platform_fee' ? '0.01' : undefined}
+                                                    min={key === 'platform_fee' ? '0' : undefined}
+                                                    max={key === 'platform_fee' ? '100' : undefined}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
 
-                            <div className="flex items-center gap-2 pt-2">
-                                <input
-                                    type="checkbox"
-                                    id="is_active"
-                                    checked={form.is_active}
-                                    onChange={e => setForm({ ...form, is_active: e.target.checked })}
-                                    className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 accent-zinc-900 dark:accent-zinc-100 cursor-pointer"
-                                />
-                                <label htmlFor="is_active" className="text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
-                                    Active
-                                </label>
-                            </div>
+                                <div className="flex items-center gap-2.5 pt-4">
+                                    <input
+                                        type="checkbox"
+                                        id="is_active"
+                                        checked={form.is_active}
+                                        onChange={e => setForm({ ...form, is_active: e.target.checked })}
+                                        className="w-4.5 h-4.5 rounded border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 accent-zinc-900 dark:accent-zinc-100 cursor-pointer"
+                                    />
+                                    <label htmlFor="is_active" className="text-sm md:text-[15px] font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
+                                        Active
+                                    </label>
+                                </div>
 
-                            <div className="flex justify-end gap-2 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                                <button type="button" onClick={() => navigate('/clients')} className="btn-secondary">Cancel</button>
-                                <button disabled={loading} className="btn-primary">
-                                    {loading ? 'Saving...' : 'Save Changes'}
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </form>
+                                <div className="flex justify-end gap-2.5 pt-6 mt-2 border-t border-zinc-200 dark:border-zinc-800">
+                                    <button type="button" onClick={() => navigate('/clients')} className="btn-secondary text-xs py-1.5 px-4">Cancel</button>
+                                    <button disabled={loading} className="btn-primary text-xs py-1.5 px-5">
+                                        {loading ? 'Saving...' : 'Save Changes'}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </form>
+                </div>
             </div>
         </div>
     )

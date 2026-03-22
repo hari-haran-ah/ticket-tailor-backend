@@ -41,9 +41,9 @@ export default function ClientSelector({ clients, selectedId, onSelect, placehol
 
             {isOpen && (
                 <div
-                    className="absolute top-full left-0 right-0 mt-2 bg-gray-50 dark:bg-dark-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl z-[99999] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+                    className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-dark-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl z-[99999] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
                 >
-                    <div className="p-2 border-b border-gray-200 dark:border-white/5 bg-gray-100 dark:bg-dark-950/50">
+                    <div className="p-2 border-b border-gray-200 dark:border-white/5 bg-white dark:bg-dark-950/50">
                         <div className="relative">
                             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/20" />
                             <input

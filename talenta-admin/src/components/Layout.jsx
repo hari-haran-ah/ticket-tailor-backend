@@ -97,13 +97,13 @@ export default function Layout({ children }) {
                     onClick={onClick}
                     title={collapsed ? label : undefined}
                     className={({ isActive }) =>
-                        `flex items-center text-sm 3xl:text-base font-medium transition-all rounded-lg
+                        `flex items-center transition-all duration-200 font-medium whitespace-nowrap
                         ${collapsed
                             ? 'w-9 h-9 3xl:w-10 3xl:h-10 mx-auto justify-center p-0'
                             : 'gap-3 px-3 3xl:px-4 py-2 3xl:py-2.5 w-full'}
                         ${isActive
-                            ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-300 dark:border-zinc-700'
-                            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 border border-transparent'
+                            ? 'bg-white dark:bg-zinc-800 text-[#111827] dark:text-zinc-100 border border-black dark:border-zinc-700 rounded-lg shadow-sm'
+                            : 'text-[#6B7280] dark:text-zinc-400 hover:bg-[#F3F4F6] dark:hover:bg-zinc-800 hover:text-[#111827] dark:hover:text-zinc-100 border border-transparent rounded-lg'
                         }`
                     }
                 >
@@ -115,17 +115,17 @@ export default function Layout({ children }) {
     )
 
     const UserFooter = ({ collapsed = false }) => (
-        <div className="px-2 3xl:px-3 py-3 3xl:py-4 overflow-hidden border-t border-zinc-200 dark:border-zinc-700">
+        <div className="px-2 3xl:px-3 py-3 3xl:py-4 overflow-hidden border-t border-[#E2E5E9] dark:border-zinc-700">
             {!collapsed && (
                 <div className="px-3 3xl:px-4 py-2 3xl:py-2.5 mb-1 flex flex-col">
-                    <p className="text-xs 3xl:text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{formatName(admin?.full_name)}</p>
-                    <p className="text-xs 3xl:text-sm text-zinc-500 dark:text-zinc-400 truncate">{admin?.email}</p>
+                    <p className="text-xs 3xl:text-sm font-medium text-[#111827] dark:text-zinc-100 truncate">{formatName(admin?.full_name)}</p>
+                    <p className="text-xs 3xl:text-sm text-[#6B7280] dark:text-zinc-400 truncate">{admin?.email}</p>
                 </div>
             )}
             <button
                 onClick={() => setShowLogoutConfirm(true)}
                 title={collapsed ? 'Logout' : undefined}
-                className={`flex items-center text-sm 3xl:text-base font-medium text-zinc-600 dark:text-zinc-400 transition-all hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg
+                className={`flex items-center text-sm 3xl:text-base font-medium text-[#6B7280] dark:text-zinc-400 transition-all hover:text-[#111827] dark:hover:text-zinc-100 hover:bg-[#E2E5E9]/50 dark:hover:bg-zinc-800 rounded-lg
                 ${collapsed ? 'w-9 h-9 3xl:w-10 3xl:h-10 mx-auto justify-center p-0' : 'gap-3 px-3 3xl:px-4 py-2 3xl:py-2.5 w-full'}`}
             >
                 <LogOut size={windowWidth >= 1920 ? 18 : 16} className="flex-shrink-0" />
@@ -135,24 +135,24 @@ export default function Layout({ children }) {
     )
 
     return (
-        <div className="flex h-screen overflow-hidden select-none bg-[#e8e8ea] dark:bg-[#0a0a0a]">
+        <div className="flex h-screen overflow-hidden select-none bg-[#F5F5F5] dark:bg-[#0a0a0a]">
 
             {/* ══════════════════════════════════════════
                 DESKTOP Sidebar (md+) - Theme Aware
             ══════════════════════════════════════════ */}
             <aside
                 style={{ width: getSidebarWidth() }}
-                className="hidden md:flex flex-shrink-0 bg-[#f0f0f2] dark:bg-[#18181b] border-r border-zinc-200 dark:border-zinc-700 flex-col relative transition-all duration-200 ease-out"
+                className="hidden md:flex flex-shrink-0 bg-[#F5F5F5] dark:bg-[#262626] border-r border-[#E2E5E9] dark:border-zinc-700 flex-col relative transition-all duration-200 ease-out z-10"
             >
                 {/* Header Toggle Area */}
-                <div className={`flex items-center px-4 3xl:px-5 h-[60px] 3xl:h-[72px] shrink-0 border-b border-zinc-200 dark:border-zinc-700 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+                <div className={`flex items-center px-4 3xl:px-5 h-[60px] 3xl:h-[72px] shrink-0 border-b border-[#E2E5E9] dark:border-zinc-700 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                     {/* Logo left */}
                     {!isCollapsed && (
-                        <div className="flex items-center gap-2 3xl:gap-3">
-                            <div className="w-7 h-7 3xl:w-8 3xl:h-8 rounded-lg bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                                <Zap size={windowWidth >= 1920 ? 16 : 14} className="text-zinc-700 dark:text-zinc-300" fill="currentColor" />
+                        <div className="flex items-center gap-2.5 3xl:gap-3">
+                            <div className="w-8 h-8 3xl:w-10 3xl:h-10 bg-[#E2E5E9] dark:bg-zinc-800 rounded-lg flex items-center justify-center border border-[#E2E5E9] dark:border-zinc-700">
+                                <Zap size={windowWidth >= 1920 ? 16 : 14} className="text-[#111827] dark:text-zinc-300" fill="currentColor" />
                             </div>
-                            <span className="text-base 3xl:text-lg font-semibold text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
+                            <span className="text-base 3xl:text-lg font-semibold text-[#111827] dark:text-zinc-100 whitespace-nowrap">
                                 Talenta
                             </span>
                         </div>
@@ -174,12 +174,12 @@ export default function Layout({ children }) {
             {/* ══════════════════════════════════════════
                 MOBILE Top Bar (< md) - Theme Aware
             ══════════════════════════════════════════ */}
-            <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-2.5 bg-[#f0f0f2]/95 dark:bg-[#18181b]/95 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-700">
+            <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-2.5 bg-[#F5F5F5] dark:bg-[#262626] border-b border-[#E2E5E9] dark:border-zinc-700">
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
-                        <Zap size={14} className="text-zinc-700 dark:text-zinc-300" fill="currentColor" />
+                    <div className="w-7 h-7 rounded-lg bg-[#E2E5E9] dark:bg-zinc-800 flex items-center justify-center border border-[#E2E5E9] dark:border-zinc-700">
+                        <Zap size={14} className="text-[#111827] dark:text-zinc-300" fill="currentColor" />
                     </div>
-                    <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Talenta</span>
+                    <span className="text-base font-semibold text-[#111827] dark:text-zinc-100">Talenta</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <button
@@ -190,7 +190,7 @@ export default function Layout({ children }) {
                     </button>
                     <button
                         onClick={() => setMobileOpen(true)}
-                        className="p-2 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                        className="p-2 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-[#0a0a0a] dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                     >
                         <Menu size={18} />
                     </button>
@@ -209,18 +209,18 @@ export default function Layout({ children }) {
                     />
 
                     {/* Drawer panel */}
-                    <aside className="relative w-64 bg-[#f0f0f2] dark:bg-[#18181b] border-r border-zinc-200 dark:border-zinc-700 flex flex-col h-full shadow-xl animate-in slide-in-from-left duration-200">
+                    <aside className="relative w-64 bg-[#F5F5F5] dark:bg-[#262626] border-r border-[#E2E5E9] dark:border-zinc-700 flex flex-col h-full shadow-xl animate-in slide-in-from-left duration-200">
                         {/* Header */}
-                        <div className="flex items-center justify-between px-4 py-4 border-b border-zinc-200 dark:border-zinc-700">
+                        <div className="flex items-center justify-between px-4 py-4 border-b border-[#E2E5E9] dark:border-zinc-700">
                             <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-lg bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
-                                    <Zap size={14} className="text-zinc-700 dark:text-zinc-300" fill="currentColor" />
+                                <div className="w-7 h-7 rounded-lg bg-[#E2E5E9] dark:bg-zinc-800 flex items-center justify-center border border-[#E2E5E9] dark:border-zinc-700">
+                                    <Zap size={14} className="text-[#111827] dark:text-zinc-300" fill="currentColor" />
                                 </div>
-                                <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Talenta</span>
+                                <span className="text-base font-semibold text-[#111827] dark:text-zinc-100">Talenta</span>
                             </div>
                             <button
                                 onClick={() => setMobileOpen(false)}
-                                className="p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                                className="p-1.5 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-[#0a0a0a] dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                             >
                                 <X size={16} />
                             </button>
@@ -229,9 +229,9 @@ export default function Layout({ children }) {
                         <NavLinks collapsed={false} onClick={() => setMobileOpen(false)} />
 
                         {/* User info */}
-                        <div className="px-3 py-2 mx-2 mb-2 rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                            <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">{formatName(admin?.full_name)}</p>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{admin?.email}</p>
+                        <div className="px-3 py-2 mx-2 mb-2 rounded-lg bg-white dark:bg-zinc-800 border border-[#E2E5E9] dark:border-zinc-700">
+                            <p className="text-xs font-medium text-[#111827] dark:text-zinc-100 truncate">{formatName(admin?.full_name)}</p>
+                            <p className="text-xs text-[#6B7280] dark:text-zinc-400 truncate mt-0.5">{admin?.email}</p>
                         </div>
 
                         <UserFooter collapsed={false} />
@@ -244,7 +244,7 @@ export default function Layout({ children }) {
             ══════════════════════════════════════════ */}
             <main className="flex-1 flex flex-col overflow-hidden pt-[56px] md:pt-0">
                 {/* Content Header - Theme Aware */}
-                <header className="hidden md:flex items-center justify-end gap-2 3xl:gap-3 px-6 3xl:px-8 h-[60px] 3xl:h-[72px] shrink-0 border-b border-zinc-200 dark:border-zinc-700 bg-[#f0f0f2] dark:bg-[#18181b]">
+                <header className="hidden md:flex items-center justify-end gap-2 3xl:gap-3 px-6 3xl:px-8 h-[60px] 3xl:h-[72px] shrink-0 border-b border-[#E2E5E9] dark:border-zinc-700 bg-[#F5F5F5] dark:bg-[#262626]">
                     {/* Theme Toggle */}
                     <button
                         onClick={toggleTheme}
@@ -270,12 +270,12 @@ export default function Layout({ children }) {
                         </button>
 
                         {profileOpen && (
-                            <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-[#1f1f23] border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg overflow-hidden z-50">
-                                <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
-                                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                            <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-[#1f1f23] border border-[#E2E5E9] dark:border-zinc-700 rounded-lg shadow-lg overflow-hidden z-50">
+                                <div className="px-4 py-3 border-b border-[#E2E5E9] dark:border-zinc-700">
+                                    <p className="text-sm font-medium text-[#111827] dark:text-zinc-100 truncate">
                                         {formatName(admin?.full_name)}
                                     </p>
-                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+                                    <p className="text-xs text-[#6B7280] dark:text-zinc-400 truncate mt-0.5">
                                         {admin?.email}
                                     </p>
                                 </div>
@@ -285,7 +285,7 @@ export default function Layout({ children }) {
                                             setProfileOpen(false)
                                             setShowLogoutConfirm(true)
                                         }}
-                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#6B7280] dark:text-zinc-400 hover:bg-[#F9FAFB] dark:hover:bg-zinc-800 hover:text-[#111827] dark:hover:text-zinc-100 transition-colors"
                                     >
                                         <LogOut size={14} />
                                         Sign out

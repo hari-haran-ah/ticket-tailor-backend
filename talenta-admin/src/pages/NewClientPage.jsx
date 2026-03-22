@@ -73,8 +73,9 @@ export default function NewClientPage() {
     ]
 
     return (
-        <div className="p-8 space-y-8 max-w-4xl mx-auto">
-            {/* Header */}
+        <div className="p-4 md:p-6 lg:p-8 min-h-full h-full overflow-y-auto w-full bg-white dark:bg-[#0a0a0a]">
+            <div className="space-y-8 max-w-4xl mx-auto pb-12">
+                {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-gray-300 dark:border-white/10 pb-6">
                 <div className="space-y-3">
                     <button onClick={() => navigate('/clients')} className="text-gray-500 dark:text-white/30 hover:text-gray-900 dark:hover:text-white/70 flex items-center gap-1.5 text-xs font-medium transition-colors">
@@ -91,8 +92,8 @@ export default function NewClientPage() {
                 <form onSubmit={handleSubmit} className="p-8 space-y-8">
                     {/* Error Message */}
                     {error && (
-                        <div className="p-4 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-black dark:text-white text-sm rounded-xl flex items-center gap-2">
-                            <AlertCircle size={18} /> {error}
+                        <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
+                            <AlertCircle size={16} /> {error}
                         </div>
                     )}
 
@@ -100,13 +101,13 @@ export default function NewClientPage() {
                         {fields.map(({ key, label, icon: Icon, type, required, placeholder, desc }) => (
                             <div key={key} className="space-y-1.5">
                                 <label className="label">
-                                    {label}{required && <span className="text-black dark:text-white ml-1">*</span>}
+                                    {label}{required && <span className="text-red-500 font-bold ml-1">*</span>}
                                 </label>
                                 <div className="relative">
                                     <Icon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30" />
                                     <input
                                         type={type}
-                                        className="input-field pl-10"
+                                        className="input-field pl-10 md:text-[15px]"
                                         placeholder={placeholder || `Enter ${label.toLowerCase()}`}
                                         value={form[key]}
                                         onChange={e => setForm({ ...form, [key]: e.target.value })}
@@ -143,6 +144,7 @@ export default function NewClientPage() {
                         </button>
                     </div>
                 </form>
+            </div>
             </div>
         </div>
     )

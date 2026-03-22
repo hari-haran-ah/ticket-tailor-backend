@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import api from '../lib/api'
@@ -82,11 +82,12 @@ export default function ClientsPage() {
     const [toggling, setToggling] = useState(false)
     const [sortOrder, setSortOrder] = useState('desc')
     const [sortBy, setSortBy] = useState('created_at')
+    const currentFetchRef = useRef(0)
 
     const SortableHeader = ({ label, field, className }) => {
         const isActive = sortBy === field;
         return (
-            <th className={`px-4 3xl:px-5 py-3 3xl:py-4 text-left font-medium text-zinc-500 dark:text-zinc-400 text-sm 3xl:text-base ${className || ''}`}>
+            <th className={`px-4 3xl:px-5 py-3 3xl:py-4 text-left font-medium text-zinc-500 dark:text-zinc-400 text-sm md:text-[15px] 3xl:text-base ${className || ''}`}>
                 <button
                     onClick={() => {
                         if (isActive) {
@@ -118,6 +119,8 @@ export default function ClientsPage() {
     };
 
     const load = async () => {
+        const fetchId = Date.now()
+        currentFetchRef.current = fetchId
         setLoading(true)
         setError('')
         try {
@@ -126,25 +129,35 @@ export default function ClientsPage() {
                     page,
                     size: pageSize,
                     search: debouncedSearch,
-                    search: debouncedSearch,
                     sort_by: sortBy,
                     sort_order: sortOrder
                 }
             })
-            setClients(data.items)
-            setTotalPages(data.pages)
-            setTotalItems(data.total)
+            if (currentFetchRef.current === fetchId) {
+                setClients(data.items)
+                setTotalPages(data.pages)
+                setTotalItems(data.total)
+            }
         } catch (e) {
-            setError(e.response?.data?.detail || 'Failed to load clients')
+            if (currentFetchRef.current === fetchId) {
+                setError(e.response?.data?.detail || 'Failed to load clients')
+            }
         } finally {
-            setLoading(false)
+            if (currentFetchRef.current === fetchId) {
+                setLoading(false)
+            }
         }
     }
 
     useEffect(() => {
         const handler = setTimeout(() => {
-            setDebouncedSearch(search)
-            setPage(1)
+            setDebouncedSearch(prev => {
+                if (prev !== search) {
+                    setPage(1)
+                    return search
+                }
+                return prev
+            })
         }, 300)
         return () => clearTimeout(handler)
     }, [search])
@@ -169,12 +182,12 @@ export default function ClientsPage() {
     }
 
     return (
-        <div className="p-4 md:p-6 3xl:p-8 space-y-4 3xl:space-y-6">
+        <div className="p-4 md:p-6 3xl:p-8 space-y-4 3xl:space-y-6 bg-white dark:bg-[#0a0a0a] min-h-full h-full overflow-y-auto w-full">
             {/* Page Title + Actions Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-xl 3xl:text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Clients</h1>
-                    <p className="text-zinc-500 dark:text-zinc-400 text-sm 3xl:text-base mt-0.5">Add and manage clients for this application</p>
+                    <h1 className="text-[28px] md:text-2xl font-bold tracking-tight text-[#0a0a0a] dark:text-white">Clients</h1>
+                    <p className="text-gray-500 dark:text-zinc-400 text-sm mt-1">Add and manage clients for this application</p>
                 </div>
                 <div className="flex items-center gap-2 3xl:gap-3">
                     <div className="relative">
@@ -182,7 +195,7 @@ export default function ClientsPage() {
                         <input
                             type="text"
                             placeholder="Search clients..."
-                            className="input-field h-9 3xl:h-10 pl-9 pr-8 w-48 3xl:w-64 3xl:text-base"
+                            className="input-field h-9 3xl:h-10 pl-9 pr-8 w-64 md:w-72 3xl:w-80 md:text-[15px]"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                         />
@@ -210,24 +223,22 @@ export default function ClientsPage() {
             )}
 
             {/* ── Desktop Table (md+) ── */}
-            <div className="card overflow-hidden dark:bg-[#0a0a0a] border-zinc-200 dark:border-zinc-800">
-
-                {/* TABLE — hidden on mobile */}
-                <div className="hidden md:block overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-sm 3xl:text-base text-left border-collapse whitespace-nowrap">
+            <div className="hidden md:block">
+                <div className="border border-[#E2E5E9] dark:border-zinc-800 rounded-lg overflow-x-auto custom-scrollbar bg-white dark:bg-[#0a0a0a]">
+                    <table className="w-full text-sm md:text-[14px] 3xl:text-base text-left border-collapse whitespace-nowrap">
                         <thead>
-                            <tr className="border-b border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white bg-zinc-50/50 dark:bg-zinc-900/20">
+                            <tr className="border-b border-[#E2E5E9] dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 bg-white dark:bg-[#0a0a0a]">
                                 <SortableHeader label="Name" field="name" className="min-w-[150px] 3xl:min-w-[180px] w-[25%]" />
                                 <SortableHeader label="Domain" field="domain_name" className="min-w-[150px] 3xl:min-w-[200px] w-[30%]" />
                                 <SortableHeader label="Platform Fee" field="platform_fee" className="min-w-[140px] 3xl:min-w-[160px] w-[20%]" />
                                 <SortableHeader label="Status" field="is_active" className="min-w-[120px] 3xl:min-w-[140px] w-[15%]" />
-                                <th className="px-4 3xl:px-5 py-3 3xl:py-4 text-left font-medium text-zinc-500 dark:text-zinc-400 text-sm 3xl:text-base w-[10%]">Actions</th>
+                                <th className="px-4 3xl:px-5 py-3 3xl:py-4 text-left font-medium text-zinc-500 dark:text-zinc-400 text-sm md:text-[14px] 3xl:text-base w-[10%]">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i} className="border-b border-[#e5e7eb] dark:border-zinc-800/50">
+                                    <tr key={i} className="border-b border-[#E2E5E9] dark:border-zinc-800/50">
                                         <td className="px-4 3xl:px-5 py-3 3xl:py-4"><Skeleton className="w-28 3xl:w-32 h-4 3xl:h-5 rounded" /></td>
                                         <td className="px-4 3xl:px-5 py-3 3xl:py-4"><Skeleton className="w-36 3xl:w-44 h-4 3xl:h-5 rounded" /></td>
                                         <td className="px-4 3xl:px-5 py-3 3xl:py-4"><Skeleton className="w-12 3xl:w-16 h-4 3xl:h-5 rounded" /></td>
@@ -236,28 +247,28 @@ export default function ClientsPage() {
                                     </tr>
                                 ))
                             ) : clients.map(c => (
-                                <tr key={c.id} className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors">
+                                <tr key={c.id} className="border-b border-[#E2E5E9] dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors bg-white dark:bg-[#0a0a0a]">
                                     <td className="px-4 3xl:px-5 py-3 3xl:py-4">
-                                        <span className="font-medium text-zinc-900 dark:text-white">{formatName(c.name)}</span>
+                                        <span className="font-medium text-[#111827] dark:text-white">{formatName(c.name)}</span>
                                     </td>
-                                    <td className="px-4 3xl:px-5 py-3 3xl:py-4 font-mono text-xs 3xl:text-sm">
+                                    <td className="px-4 3xl:px-5 py-3 3xl:py-4 font-mono text-xs md:text-[14px] 3xl:text-[14px]">
                                         <a
                                             href={c.domain_name.startsWith('http') ? c.domain_name : `https://${c.domain_name}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-zinc-900 dark:text-zinc-200 hover:text-black dark:hover:text-white hover:underline transition-colors"
+                                            className="text-[#111827] dark:text-zinc-200 hover:text-black dark:hover:text-white hover:underline transition-colors"
                                             onClick={e => e.stopPropagation()}
                                         >
                                             {c.domain_name}
                                         </a>
                                     </td>
-                                    <td className="px-4 3xl:px-5 py-3 3xl:py-4 text-left text-zinc-900 dark:text-zinc-200">{c.platform_fee}%</td>
+                                    <td className="px-4 3xl:px-5 py-3 3xl:py-4 text-left text-[#111827] dark:text-zinc-200">{c.platform_fee}%</td>
                                     <td className="px-4 3xl:px-5 py-3 3xl:py-4 text-left">
                                         <button
                                             onClick={() => setToggleTarget(c)}
-                                            className={`inline-flex items-center gap-1.5 px-2 3xl:px-3 py-0.5 3xl:py-1 rounded text-xs 3xl:text-sm font-medium transition-colors border ${c.is_active
+                                            className={`inline-flex items-center gap-1.5 px-2 3xl:px-3 py-0.5 3xl:py-1 rounded text-xs md:text-[14px] 3xl:text-[14px] font-medium transition-colors border ${c.is_active
                                                 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20'
-                                                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                                                : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/30 hover:bg-red-100 dark:hover:bg-red-900/40'
                                                 }`}
                                         >
                                             {c.is_active
@@ -268,9 +279,9 @@ export default function ClientsPage() {
                                     </td>
                                     <td className="px-4 3xl:px-5 py-3 3xl:py-4">
                                         <div className="flex items-center justify-start gap-1 3xl:gap-2">
-                                            <button onClick={() => navigate(`/clients/${c.id}/view`)} className="btn-icon text-zinc-900 dark:text-zinc-200 3xl:p-2" title="View"><Eye size={14} className="3xl:w-4 3xl:h-4" /></button>
-                                            <button onClick={() => navigate(`/events/${c.id}`)} className="btn-icon text-zinc-900 dark:text-zinc-200 3xl:p-2" title="Events"><CalendarDays size={14} className="3xl:w-4 3xl:h-4" /></button>
-                                            <button onClick={() => navigate(`/clients/${c.id}/edit`)} className="btn-icon text-zinc-900 dark:text-zinc-200 3xl:p-2" title="Edit"><Pencil size={14} className="3xl:w-4 3xl:h-4" /></button>
+                                            <button onClick={() => navigate(`/clients/${c.id}/view`)} className="btn-icon text-zinc-400 hover:text-[#111827] dark:text-zinc-400 dark:hover:text-zinc-200 3xl:p-2" title="View"><Eye size={14} className="3xl:w-4 3xl:h-4" /></button>
+                                            <button onClick={() => navigate(`/events/${c.id}`, { state: { isolated: true } })} className="btn-icon text-zinc-400 hover:text-[#111827] dark:text-zinc-400 dark:hover:text-zinc-200 3xl:p-2" title="Events"><CalendarDays size={14} className="3xl:w-4 3xl:h-4" /></button>
+                                            <button onClick={() => navigate(`/clients/${c.id}/edit`)} className="btn-icon text-zinc-400 hover:text-[#111827] dark:text-zinc-400 dark:hover:text-zinc-200 3xl:p-2" title="Edit"><Pencil size={14} className="3xl:w-4 3xl:h-4" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -280,74 +291,13 @@ export default function ClientsPage() {
                     {!loading && clients.length === 0 && (
                         <div className="text-center py-12 3xl:py-16 text-zinc-500 dark:text-zinc-400">
                             <Users size={32} className="mx-auto mb-2 opacity-40 3xl:w-10 3xl:h-10" />
-                            <p className="text-sm 3xl:text-base">{search ? `No clients match "${search}"` : 'No clients yet'}</p>
+                            <p className="text-[14px] 3xl:text-base">{search ? `No clients match "${search}"` : 'No clients yet'}</p>
                         </div>
                     )}
                 </div>
 
-                {/* CARD LIST — shown only on mobile */}
-                <div className="md:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
-                    {loading ? (
-                        Array.from({ length: 5 }).map((_, i) => (
-                            <div key={i} className="p-4 space-y-3">
-                                <div className="flex justify-between items-center"><Skeleton className="w-24 h-4 rounded" /><Skeleton className="w-16 h-5 rounded-full" /></div>
-                                <div className="grid grid-cols-2 gap-y-2"><Skeleton className="w-32 h-3 rounded" /><Skeleton className="w-24 h-3 rounded" /><Skeleton className="w-16 h-3 rounded col-span-2" /></div>
-                                <div className="flex gap-2 pt-2"><Skeleton className="h-8 flex-1 rounded" /><Skeleton className="h-8 flex-1 rounded" /><Skeleton className="h-8 flex-1 rounded" /></div>
-                            </div>
-                        ))
-                    ) : clients.length === 0 ? (
-                        <div className="text-center py-12 text-zinc-600 dark:text-zinc-400 px-4">
-                            <Users size={32} className="mx-auto mb-2 opacity-40" />
-                            <p className="text-sm">{search ? `No clients match "${search}"` : 'No clients yet'}</p>
-                        </div>
-                    ) : clients.map(c => (
-                        <div key={c.id} className="p-4 space-y-2">
-                            {/* Name + status */}
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="text-zinc-900 dark:text-white font-semibold text-sm">{formatName(c.name)}</span>
-                                <button
-                                    onClick={() => setToggleTarget(c)}
-                                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium border ${c.is_active
-                                        ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30'
-                                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
-                                        }`}
-                                >
-                                    {c.is_active ? 'Active' : 'Inactive'}
-                                </button>
-                            </div>
-                            {/* Domain + fee */}
-                            <div className="flex items-center justify-between text-xs text-zinc-500">
-                                <span className="font-mono truncate flex-1">
-                                    <a
-                                        href={c.domain_name.startsWith('http') ? c.domain_name : `https://${c.domain_name}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-zinc-900 dark:text-zinc-200 hover:text-black dark:hover:text-white hover:underline transition-colors"
-                                        onClick={e => e.stopPropagation()}
-                                    >
-                                        {c.domain_name}
-                                    </a>
-                                </span>
-                                <span className="ml-2">{c.platform_fee}% fee</span>
-                            </div>
-                            {/* Action buttons */}
-                            <div className="flex items-center gap-2 pt-2">
-                                <button onClick={() => navigate(`/clients/${c.id}/view`)} className="btn-secondary btn-sm flex-1 flex items-center justify-center gap-1 text-zinc-900 dark:text-zinc-200">
-                                    <Eye size={12} /> View
-                                </button>
-                                <button onClick={() => navigate(`/events/${c.id}`)} className="btn-secondary btn-sm flex-1 flex items-center justify-center gap-1 text-zinc-900 dark:text-zinc-200">
-                                    <CalendarDays size={12} /> Events
-                                </button>
-                                <button onClick={() => navigate(`/clients/${c.id}/edit`)} className="btn-secondary btn-sm flex-1 flex items-center justify-center gap-1 text-zinc-900 dark:text-zinc-200">
-                                    <Pencil size={12} /> Edit
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
                 {/* Pagination Footer */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 3xl:px-6 py-4 3xl:py-5 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 3xl:py-5 mt-2 bg-transparent">
                     <p className="text-zinc-500 dark:text-zinc-400 text-sm 3xl:text-base">
                         Showing {totalItems === 0 ? 0 : (page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalItems)} of {totalItems} results
                     </p>
@@ -418,7 +368,66 @@ export default function ClientsPage() {
                 </div>
             </div>
 
-
+            {/* CARD LIST — shown only on mobile */}
+            <div className="md:hidden divide-y border border-[#E2E5E9] dark:border-zinc-800 rounded-lg divide-[#E2E5E9] dark:divide-zinc-800 bg-white dark:bg-[#0a0a0a]">
+                {loading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="p-4 space-y-3">
+                            <div className="flex justify-between items-center"><Skeleton className="w-24 h-4 rounded" /><Skeleton className="w-16 h-5 rounded-full" /></div>
+                            <div className="grid grid-cols-2 gap-y-2"><Skeleton className="w-32 h-3 rounded" /><Skeleton className="w-24 h-3 rounded" /><Skeleton className="w-16 h-3 rounded col-span-2" /></div>
+                            <div className="flex gap-2 pt-2"><Skeleton className="h-8 flex-1 rounded" /><Skeleton className="h-8 flex-1 rounded" /><Skeleton className="h-8 flex-1 rounded" /></div>
+                        </div>
+                    ))
+                ) : clients.length === 0 ? (
+                    <div className="text-center py-12 text-zinc-600 dark:text-zinc-400 px-4">
+                        <Users size={32} className="mx-auto mb-2 opacity-40" />
+                        <p className="text-sm">{search ? `No clients match "${search}"` : 'No clients yet'}</p>
+                    </div>
+                ) : clients.map(c => (
+                    <div key={c.id} className="p-4 space-y-2">
+                        {/* Name + status */}
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-zinc-900 dark:text-white font-semibold text-sm">{formatName(c.name)}</span>
+                            <button
+                                onClick={() => setToggleTarget(c)}
+                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium border ${c.is_active
+                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30'
+                                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                                    }`}
+                            >
+                                {c.is_active ? 'Active' : 'Inactive'}
+                            </button>
+                        </div>
+                        {/* Domain + fee */}
+                        <div className="flex items-center justify-between text-xs text-zinc-500">
+                            <span className="font-mono truncate flex-1">
+                                <a
+                                    href={c.domain_name.startsWith('http') ? c.domain_name : `https://${c.domain_name}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-zinc-900 dark:text-zinc-200 hover:text-black dark:hover:text-white hover:underline transition-colors"
+                                    onClick={e => e.stopPropagation()}
+                                >
+                                    {c.domain_name}
+                                </a>
+                            </span>
+                            <span className="ml-2">{c.platform_fee}% fee</span>
+                        </div>
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-2 pt-2">
+                            <button onClick={() => navigate(`/clients/${c.id}/view`)} className="btn-secondary btn-sm flex-1 flex items-center justify-center gap-1 text-zinc-900 dark:text-zinc-200">
+                                <Eye size={12} /> View
+                            </button>
+                            <button onClick={() => navigate(`/events/${c.id}`, { state: { isolated: true } })} className="btn-secondary btn-sm flex-1 flex items-center justify-center gap-1 text-zinc-900 dark:text-zinc-200">
+                                <CalendarDays size={12} /> Events
+                            </button>
+                            <button onClick={() => navigate(`/clients/${c.id}/edit`)} className="btn-secondary btn-sm flex-1 flex items-center justify-center gap-1 text-zinc-900 dark:text-zinc-200">
+                                <Pencil size={12} /> Edit
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
 
             {/* Toggle Status Confirmation */}
             <ToggleStatusModal

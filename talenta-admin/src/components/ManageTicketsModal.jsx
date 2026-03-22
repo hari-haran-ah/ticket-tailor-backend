@@ -100,13 +100,13 @@ export default function ManageTicketsModal({ isOpen, onClose, client_id, event, 
                     <div className="flex border-b border-gray-300 dark:border-white/5">
                         <button
                             onClick={() => setActiveTab('ticket')}
-                            className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'ticket' ? 'text-black dark:text-white bg-gray-200 dark:bg-white/10 border-b-2 border-black dark:border-white' : 'text-gray-400 dark:text-white/30 hover:text-gray-600 dark:hover:text-white/50'}`}
+                            className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'ticket' ? 'text-black dark:text-white bg-white dark:bg-white/10 border-b-2 border-black dark:border-white' : 'text-gray-400 dark:text-white/30 hover:text-gray-600 dark:hover:text-white/50'}`}
                         >
                             <Ticket size={16} /> New Ticket
                         </button>
                         <button
                             onClick={() => setActiveTab('group')}
-                            className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'group' ? 'text-black dark:text-white bg-gray-200 dark:bg-white/10 border-b-2 border-black dark:border-white' : 'text-gray-400 dark:text-white/30 hover:text-gray-600 dark:hover:text-white/50'}`}
+                            className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeTab === 'group' ? 'text-black dark:text-white bg-white dark:bg-white/10 border-b-2 border-black dark:border-white' : 'text-gray-400 dark:text-white/30 hover:text-gray-600 dark:hover:text-white/50'}`}
                         >
                             <Layers size={16} /> New Group
                         </button>
@@ -114,7 +114,7 @@ export default function ManageTicketsModal({ isOpen, onClose, client_id, event, 
                 )}
 
                 <div className="p-6">
-                    {error && <div className="mb-4 p-3 bg-gray-200 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-black dark:text-white text-sm rounded-xl flex items-center gap-2"><AlertCircle size={16} />{error}</div>}
+                    {error && <div className="mb-4 p-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 text-black dark:text-white text-sm rounded-xl flex items-center gap-2"><AlertCircle size={16} />{error}</div>}
 
                     {activeTab === 'ticket' ? (
                         <form onSubmit={handleTicketAction} className="space-y-4">
@@ -154,7 +154,7 @@ export default function ManageTicketsModal({ isOpen, onClose, client_id, event, 
                                         ))}
                                     </select>
                                 ) : (
-                                    <div className="p-3 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/5 text-[10px] text-gray-400 dark:text-white/20 italic text-center">
+                                    <div className="p-3 rounded-xl bg-white dark:bg-white/5 border border-gray-300 dark:border-white/5 text-[10px] text-gray-400 dark:text-white/20 italic text-center">
                                         No groups created yet. You can create one in the next tab.
                                     </div>
                                 )}
