@@ -106,6 +106,58 @@ def get_client(
     return client
 
 
+@router.get("/{client_id}/page")
+def get_client_page(
+    client_id: int,
+    size: int = 6,
+    search: str = "",
+    is_active: Optional[bool] = None,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
+    db: Session = Depends(get_db),
+    _: Admin = Depends(get_current_admin),
+):
+    """Find the page number that contains this client ID."""
+    query = db.query(Client.id)
+    
+    if is_active is not None:
+        query = query.filter(Client.is_active == is_active)
+        
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                Client.name.ilike(search_term),
+                Client.domain_name.ilike(search_term),
+                Client.contact_email.ilike(search_term)
+            )
+        )
+    
+    if sort_by == "name":
+        order_col = Client.name
+    elif sort_by == "domain_name":
+        order_col = Client.domain_name
+    elif sort_by == "platform_fee":
+        order_col = Client.platform_fee
+    elif sort_by == "is_active":
+        order_col = Client.is_active
+    else:
+        order_col = Client.created_at
+
+    if sort_order == "asc":
+        query = query.order_by(order_col.asc())
+    else:
+        query = query.order_by(order_col.desc())
+        
+    ordered_ids = [row[0] for row in query.all()]
+    try:
+        index = ordered_ids.index(client_id)
+        page = (index // size) + 1
+        return {"page": page}
+    except ValueError:
+        return {"page": 1}
+
+
 @router.put("/{client_id}", response_model=ClientOut)
 def update_client(
     client_id: int,

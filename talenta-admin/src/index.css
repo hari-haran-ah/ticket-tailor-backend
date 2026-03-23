@@ -9,21 +9,21 @@
 ══════════════════════════════════════════════════════════════ */
 @layer base {
   :root {
-    /* Page - dimmed for eye comfort */
-    --background: 240 3% 90%;
-    /* #e8e8ea - dimmed */
-    --foreground: 220 13% 10%;
-    /* #111827 */
+    /* Page - pure white */
+    --background: 0 0% 100%;
+    /* #ffffff */
+    --foreground: 240 6% 10%;
+    /* #18181b */
 
-    /* Cards / Surfaces - dimmed */
-    --card: 240 3% 94%;
-    /* #f0f0f2 - dimmed */
-    --card-foreground: 220 13% 10%;
-    /* #111827 */
+    /* Cards / Surfaces - pure white */
+    --card: 0 0% 100%;
+    /* #ffffff */
+    --card-foreground: 240 6% 10%;
+    /* #18181b */
 
-    /* Popover - dimmed */
-    --popover: 240 3% 94%;
-    --popover-foreground: 220 13% 10%;
+    /* Popover - pure white */
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 6% 10%;
 
     /* Primary accent */
     --primary: 239 84% 67%;
@@ -153,6 +153,7 @@
   .dark html,
   html.dark {
     background-color: #212121;
+    color-scheme: dark;
   }
 
   .dark body,
@@ -161,14 +162,15 @@
     color: #ececec;
   }
 
-  /* Light page background - dimmed off-white for eye comfort */
+  /* Light page background - pure white */
   html:not(.dark) {
-    background-color: #e8e8ea;
+    background-color: #ffffff;
+    color-scheme: light;
   }
 
   body:not(.dark) {
-    background-color: #e8e8ea;
-    color: #1f2937;
+    background-color: #ffffff;
+    color: #18181b;
   }
 
   body {
@@ -248,34 +250,45 @@
 ══════════════════════════════════════════════════════════════ */
 @layer components {
 
-  /* ── Card ──────────────────────────────────────────────────── */
+  /* ── Card (Production Style) ─────────────────────────────────── */
   .card {
-    @apply bg-white dark:bg-[#0a0a0a] border border-[#E2E5E9] dark:border-zinc-800 text-[#111827] dark:text-zinc-100 rounded-xl transition-colors duration-150;
+    @apply bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-lg transition-all duration-200;
   }
 
   html:not(.dark) .card {
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  html:not(.dark) .card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   }
 
   /* ── Primary button ────────────────────────────────────────── */
   .btn-primary {
-    font-weight: 500;
-    padding: 6px 14px;
+    font-weight: 600;
+    padding: 8px 16px;
     border-radius: 6px;
     transition: all 0.15s ease;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.4;
+  }
+
+  @media (min-width: 1024px) {
+    .btn-primary {
+      padding: 10px 20px;
+      font-size: 15px;
+    }
   }
 
   .dark .btn-primary {
     background: #ffffff;
-    color: #171717;
+    color: #18181b;
     border: 1px solid #ffffff;
   }
 
   .dark .btn-primary:hover {
-    background: #f5f5f5;
-    border-color: #f5f5f5;
+    background: #f4f4f5;
+    border-color: #f4f4f5;
   }
 
   html:not(.dark) .btn-primary {
@@ -301,34 +314,41 @@
   /* ── Secondary button ──────────────────────────────────────── */
   .btn-secondary {
     font-weight: 500;
-    padding: 6px 14px;
+    padding: 8px 16px;
     border-radius: 6px;
     transition: all 0.15s ease;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.4;
   }
 
+  @media (min-width: 1024px) {
+    .btn-secondary {
+      padding: 10px 20px;
+      font-size: 15px;
+    }
+  }
+
   .dark .btn-secondary {
-    background: transparent;
-    color: #a1a1aa;
+    background: #27272a;
+    color: #e4e4e7;
     border: 1px solid #3f3f46;
   }
 
   .dark .btn-secondary:hover {
-    background: #27272a;
+    background: #3f3f46;
     color: #ffffff;
     border-color: #52525b;
   }
 
   html:not(.dark) .btn-secondary {
-    background: #f0f0f2;
+    background: #f4f4f5;
     color: #52525b;
-    border: 1px solid #d1d5db;
+    border: 1px solid #e4e4e7;
   }
 
   html:not(.dark) .btn-secondary:hover {
-    background: #f0f1f3;
-    border-color: #9ca3af;
+    background: #e4e4e7;
+    border-color: #d4d4d8;
     color: #18181b;
   }
 
@@ -338,18 +358,31 @@
 
   /* ── Small button variant ─────────────────────────────────── */
   .btn-sm {
-    padding: 4px 10px;
-    font-size: 12px;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  @media (min-width: 1024px) {
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 14px;
+    }
   }
 
   /* ── Icon button ──────────────────────────────────────────── */
   .btn-icon {
-    padding: 6px;
+    padding: 8px;
     border-radius: 6px;
     transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+  }
+
+  @media (min-width: 1024px) {
+    .btn-icon {
+      padding: 10px;
+    }
   }
 
   .dark .btn-icon {
@@ -408,7 +441,24 @@
 
   /* ── Input field ───────────────────────────────────────────── */
   .input-field {
-    @apply w-full rounded-lg px-3 py-2 text-sm bg-white dark:bg-transparent border border-[#E2E5E9] dark:border-zinc-800 text-[#111827] dark:text-zinc-100 placeholder:text-[#9CA3AF] focus:outline-none focus:border-black focus:ring-0 dark:focus:border-white transition-all duration-200;
+    @apply w-full rounded-md px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:border-transparent transition-all duration-200;
+  }
+
+  @media (min-width: 1024px) {
+    .input-field {
+      @apply text-base py-2.5;
+    }
+  }
+
+  .input-field::-webkit-calendar-picker-indicator {
+    display: block !important;
+    opacity: 0.6;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+
+  .input-field::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
   }
 
   /* ── Autofill overrides ────────────────────────────────────── */
@@ -424,7 +474,7 @@
   html:not(.dark) .input-field:-webkit-autofill:hover,
   html:not(.dark) .input-field:-webkit-autofill:focus {
     -webkit-text-fill-color: #111827;
-    -webkit-box-shadow: 0 0 0px 1000px #f0f0f2 inset;
+    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
     transition: background-color 5000s ease-in-out 0s;
   }
 

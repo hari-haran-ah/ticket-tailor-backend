@@ -1,18 +1,18 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
-import Layout from './components/Layout'
-import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
-import ClientsPage from './pages/ClientsPage'
-import NewClientPage from './pages/NewClientPage'
-import EditClientPage from './pages/EditClientPage'
-import ViewClientPage from './pages/ViewClientPage'
-import EventsPage from './pages/EventsPage'
-import EventDetailsPage from './pages/EventDetailsPage'
-import NewEventPage from './pages/NewEventPage'
-import AnalysisPage from './pages/AnalysisPage'
-import PaymentsPage from './pages/PaymentsPage'
+import Layout from './components/layout/Layout'
+import LoginPage from './pages/auth/LoginPage'
+import DashboardPage from './pages/dashboard/DashboardPage'
+import ClientsPage from './pages/clients/ClientsPage'
+import NewClientPage from './pages/clients/NewClientPage'
+import EditClientPage from './pages/clients/EditClientPage'
+import ViewClientPage from './pages/clients/ViewClientPage'
+import EventsPage from './pages/events/EventsPage'
+import EventDetailsPage from './pages/events/EventDetailsPage'
+import NewEventPage from './pages/events/NewEventPage'
+import AnalysisPage from './pages/analysis/AnalysisPage'
+import PaymentsPage from './pages/payments/PaymentsPage'
 
 function PrivateRoute({ children }) {
   const { admin, loading } = useAuth()
@@ -33,7 +33,7 @@ function AppRoutes() {
     <Routes>
       <Route
         path="/login"
-        element={admin ? <Navigate to="/" replace /> : <LoginPage />}
+        element={admin ? <Navigate to="/clients" replace /> : <LoginPage />}
       />
       <Route
         path="/*"
@@ -41,14 +41,14 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               <Routes>
-                <Route path="/" element={<ClientsPage/>} />
+                <Route path="/" element={<Navigate to="/clients" replace />} />
                 <Route path="/clients" element={<ClientsPage />} />
                 <Route path="/clients/new" element={<NewClientPage />} />
                 <Route path="/clients/:clientId/edit" element={<EditClientPage />} />
                 <Route path="/clients/:clientId/view" element={<ViewClientPage />} />
                 <Route path="/events/:clientId?" element={<EventsPage />} />
                 <Route path="/events/:clientId/new" element={<NewEventPage />} />
-                <Route path="/events/:clientId/:eventId" element={<EventDetailsPage />} />
+                <Route path="/events/:clientId/:eventId/view" element={<EventDetailsPage />} />
                 <Route path="/analysis" element={<AnalysisPage />} />
                 <Route path="/payments" element={<PaymentsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

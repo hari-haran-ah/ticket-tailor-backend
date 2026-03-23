@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, Check } from 'lucide-react'
-import Skeleton from './Skeleton'
+import Skeleton from '../ui/Skeleton'
 
 /**
  * A dropdown selector for clients.
@@ -55,8 +55,13 @@ export default function ClientPillBar({ clients = [], selectedId, onSelect, load
                             <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-[10px] font-bold bg-[#f5f5f5] dark:bg-zinc-700 text-[#0a0a0a] dark:text-white">
                                 {selectedClient.name.charAt(0).toUpperCase()}
                             </div>
-                            <div className="flex flex-col items-start leading-tight overflow-hidden pt-0.5">
-                                <span className="text-sm font-semibold text-[#111827] dark:text-zinc-100 truncate w-full text-left">{selectedClient.name}</span>
+                            <div className="flex flex-col items-start leading-tight overflow-hidden pt-0.5 w-full">
+                                <div className="flex items-center gap-2 w-full">
+                                    <span className="text-sm font-semibold text-[#111827] dark:text-zinc-100 truncate">{selectedClient.name}</span>
+                                    {selectedClient.is_active === false && (
+                                        <span className="text-[9px] px-1.5 py-0.5 font-bold uppercase tracking-wider rounded text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 flex-shrink-0">INACTIVE</span>
+                                    )}
+                                </div>
                             </div>
                         </>
                     ) : (
@@ -87,10 +92,15 @@ export default function ClientPillBar({ clients = [], selectedId, onSelect, load
                                     ${isActive ? 'bg-[#e5e7eb] dark:bg-zinc-700 text-[#0a0a0a] dark:text-white' : 'bg-[#f5f5f5] dark:bg-zinc-800/80 text-gray-500 dark:text-zinc-400'}`}>
                                     {client.name.charAt(0).toUpperCase()}
                                 </div>
-                                <div className="flex-1 flex flex-col items-start leading-tight overflow-hidden">
-                                    <span className={`text-sm truncate w-full ${isActive ? 'font-semibold text-[#111827] dark:text-zinc-100' : 'font-medium text-[#4B5563] dark:text-zinc-300'}`}>
-                                        {client.name}
-                                    </span>
+                                <div className="flex-1 flex flex-col items-start leading-tight overflow-hidden w-full min-w-0">
+                                    <div className="flex items-center gap-2 w-full">
+                                        <span className={`text-sm truncate ${isActive ? 'font-semibold text-[#111827] dark:text-zinc-100' : 'font-medium text-[#4B5563] dark:text-zinc-300'}`}>
+                                            {client.name}
+                                        </span>
+                                        {client.is_active === false && (
+                                            <span className="text-[9px] px-1.5 py-0.5 font-bold uppercase tracking-wider rounded text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 flex-shrink-0">INACTIVE</span>
+                                        )}
+                                    </div>
                                     <span className={`text-[10px] font-mono truncate w-full ${isActive ? 'text-[#6B7280] dark:text-zinc-400' : 'text-[#9CA3AF] dark:text-zinc-500'}`}>
                                         {getHost(client)}
                                     </span>

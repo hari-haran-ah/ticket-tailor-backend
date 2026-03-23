@@ -65,7 +65,7 @@ async def _issue_tt_tickets_and_notify(payments: list, client_api_key: str, db: 
             "full_name":      buyer_name,
             "name":           buyer_name,  # Added 'name' field as well to satisfy TT validation for some accounts
             "email":          buyer_email,
-            "send_email":     "true",      # Ask TT to also send their own email
+            "send_email":     "1",      # Ask TT to also send their own email
             # Make reference unique per ticket_type so TT does not reject duplicate refs
             "reference":      f"{buyer_name}|{buyer_email}|{payment.ticket_type_id}",
         }

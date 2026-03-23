@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Ticket, Layers, X, AlertCircle, Plus, Save } from 'lucide-react'
-import api from '../lib/api'
+import { eventApi } from '../../api/event'
 
 export default function ManageTicketsModal({ isOpen, onClose, client_id, event, groups, onCreated, editData = null, mode = 'create' }) {
     const [loading, setLoading] = useState(false)
@@ -13,7 +13,9 @@ export default function ManageTicketsModal({ isOpen, onClose, client_id, event, 
         name: '',
         price: 0,
         quantity: 100,
-        group_id: ''
+        group_id: '',
+        min_per_order: 1,
+        max_per_order: 20
     })
 
     // Group Data
@@ -29,7 +31,9 @@ export default function ManageTicketsModal({ isOpen, onClose, client_id, event, 
                     name: editData.name || '',
                     price: (editData.price || 0) / 100,
                     quantity: editData.quantity || 0,
-                    group_id: editData.group_id || ''
+                    group_id: editData.group_id || '',
+                    min_per_order: editData.min_per_order || 1,
+                    max_per_order: editData.max_per_order || 20
                 })
             } else if (editData.type === 'group') {
                 setActiveTab('group')
@@ -37,7 +41,7 @@ export default function ManageTicketsModal({ isOpen, onClose, client_id, event, 
             }
         } else if (isOpen) {
             // Reset for create
-            setTtData({ name: '', price: 0, quantity: 100, group_id: '' })
+            setTtData({ name: '', price: 0, quantity: 100, group_id: '', min_per_order: 1, max_per_order: 20 })
             setTgName('')
         }
     }, [isOpen, editData])
@@ -49,10 +53,10 @@ export default function ManageTicketsModal({ isOpen, onClose, client_id, event, 
         setLoading(true); setError('')
         try {
             if (isEdit) {
-                await api.post(`/api/tt/${client_id}/events/${event.id}/ticket_types/${editData.id}`, ttData)
+                await eventApi.updateTicket(client_id, event.id, editData.id, ttData)
                 if (onCreated) onCreated(`Ticket "${ttData.name}" has been updated successfully.`)
             } else {
-                await api.post(`/api/tt/${client_id}/events/${event.id}/ticket_types`, ttData)
+                await eventApi.createTicket(client_id, event.id, ttData)
                 if (onCreated) onCreated(`New ticket "${ttData.name}" has been created.`)
             }
             onClose()
@@ -68,10 +72,10 @@ export default function ManageTicketsModal({ isOpen, onClose, client_id, event, 
         setLoading(true); setError('')
         try {
             if (isEdit) {
-                await api.post(`/api/tt/${client_id}/events/${event.id}/ticket_groups/${editData.id}`, { name: tgName })
+                await eventApi.updateGroup(client_id, event.id, editData.id, { name: tgName })
                 if (onCreated) onCreated(`Group "${tgName}" has been updated.`)
             } else {
-                await api.post(`/api/tt/${client_id}/events/${event.id}/ticket_groups`, { name: tgName })
+                await eventApi.createGroup(client_id, event.id, { name: tgName })
                 if (onCreated) onCreated(`New group "${tgName}" has been created.`)
             }
             setTgName('')
@@ -136,6 +140,16 @@ export default function ManageTicketsModal({ isOpen, onClose, client_id, event, 
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest ml-1">Quantity</label>
                                     <input required type="number" className="input-field" value={ttData.quantity} onChange={e => setTtData({ ...ttData, quantity: parseInt(e.target.value) })} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest ml-1">Min / Order</label>
+                                    <input required type="number" min="1" className="input-field" value={ttData.min_per_order} onChange={e => setTtData({ ...ttData, min_per_order: parseInt(e.target.value) || 1 })} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest ml-1">Max / Order</label>
+                                    <input required type="number" min="1" className="input-field" value={ttData.max_per_order} onChange={e => setTtData({ ...ttData, max_per_order: parseInt(e.target.value) || 20 })} />
                                 </div>
                             </div>
                             <div className="space-y-1.5">

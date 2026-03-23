@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import api from '../lib/api'
+import { analysisApi } from '../../api/analysis'
 import {
     Users, CalendarDays, Ticket, DollarSign, RefreshCw,
     AlertCircle, TrendingUp, ChevronRight, ArrowUpRight
 } from 'lucide-react'
-import Skeleton from '../components/Skeleton'
-import { useTheme } from '../context/ThemeContext'
+import Skeleton from '../../components/ui/Skeleton'
+import { useTheme } from '../../context/ThemeContext'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, Cell
@@ -37,7 +37,7 @@ export default function DashboardPage() {
     const load = async () => {
         setLoading(true); setError('')
         try {
-            const { data: res } = await api.get('/api/dashboard')
+            const { data: res } = await analysisApi.getDashboard()
             setData(res)
         } catch (e) {
             setError(e.response?.data?.detail || 'Failed to load dashboard')

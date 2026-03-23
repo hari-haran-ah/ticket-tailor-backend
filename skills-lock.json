@@ -1,11 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "backend-testing": {
-      "source": "supercent-io/skills-template",
-      "sourceType": "github",
-      "computedHash": "1149c16f3cb08bf0d68e842dd1bf872172f756c3a244e9cb92b96c7acce4e724"
-    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",

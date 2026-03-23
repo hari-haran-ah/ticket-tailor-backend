@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Sun, Moon, Monitor, User, LogOut, ChevronDown } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
-import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
+import { useAuth } from '../../context/AuthContext'
 
 export default function Header({ title, subtitle, onLogout }) {
     const { theme, toggleTheme } = useTheme()

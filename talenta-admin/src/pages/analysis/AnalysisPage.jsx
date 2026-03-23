@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
-import api from '../lib/api'
+import { clientApi } from '../../api/client'
+import { analysisApi } from '../../api/analysis'
+import { eventApi } from '../../api/event'
 import {
     BarChart3, AlertCircle, TrendingUp, Ticket,
     DollarSign, CalendarDays, PieChart, X, RefreshCw
 } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
-import Skeleton from '../components/Skeleton'
-import ClientPillBar from '../components/ClientPillBar'
+import { useTheme } from '../../context/ThemeContext'
+import Skeleton from '../../components/ui/Skeleton'
+import ClientPillBar from '../../components/clients/ClientPillBar'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, Legend,
@@ -85,7 +87,7 @@ export default function AnalysisPage() {
     }
 
     useEffect(() => {
-        api.get('/api/clients').then(({ data }) => {
+        clientApi.getAll().then(({ data }) => {
             setClients(data.filter(c => c.is_active))
             setLoadingClients(false)
         })
@@ -100,8 +102,8 @@ export default function AnalysisPage() {
         setSelectedMonth(null) // Always reset to All Time when loading new client
         try {
             const [analyticsRes, eventsRes] = await Promise.all([
-                api.get(`/api/tt/${clientId}/analytics`),
-                api.get(`/api/tt/${clientId}/events`),
+                analysisApi.getClientAnalytics(clientId),
+                eventApi.getAll(clientId),
             ])
             setAnalytics(analyticsRes.data)
             setEvents(eventsRes.data?.data?.data || [])
@@ -222,7 +224,7 @@ export default function AnalysisPage() {
                 <button
                     onClick={() => {
                         setLoadingClients(true);
-                        api.get('/api/clients').then(({ data }) => {
+                        clientApi.getAll().then(({ data }) => {
                             setClients(data.filter(c => c.is_active));
                             setLoadingClients(false);
                             if (selectedClient) loadAnalytics(selectedClient);

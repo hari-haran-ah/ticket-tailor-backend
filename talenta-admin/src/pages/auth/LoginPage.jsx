@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../../context/AuthContext'
 import { Zap, Eye, EyeOff, Lock, Mail } from 'lucide-react'
 
 export default function LoginPage() {
@@ -17,7 +17,7 @@ export default function LoginPage() {
         setLoading(true)
         try {
             await login(form.email, form.password)
-            navigate('/')
+            navigate('/clients')
         } catch (err) {
             setError(err.response?.data?.detail || 'Login failed. Check your credentials.')
         } finally {

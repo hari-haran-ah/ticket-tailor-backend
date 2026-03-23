@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import api from '../lib/api'
+import { authApi } from '../api/auth'
 
 const AuthContext = createContext(null)
 
@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
 
     const fetchMe = useCallback(async () => {
         try {
-            const { data } = await api.get('/api/auth/me')
+            const { data } = await authApi.getMe()
             setAdmin(data)
         } catch {
             setAdmin(null)
@@ -21,13 +21,13 @@ export function AuthProvider({ children }) {
     useEffect(() => { fetchMe() }, [fetchMe])
 
     const login = async (email, password) => {
-        const { data } = await api.post('/api/auth/login', { email, password })
+        const { data } = await authApi.login({ email, password })
         setAdmin(data.admin)
         return data
     }
 
     const logout = async () => {
-        await api.post('/api/auth/logout')
+        await authApi.logout()
         localStorage.removeItem('talenta_access_token')
         localStorage.removeItem('talenta_refresh_token')
         setAdmin(null)

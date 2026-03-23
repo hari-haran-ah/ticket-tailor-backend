@@ -69,13 +69,30 @@ async def _tt_post(api_key: str, path: str, payload: dict) -> Any:
     return response.json()
 
 
+async def _tt_post_json(api_key: str, path: str, payload: dict) -> Any:
+    """Make authenticated POST request with JSON body to TicketTailor API."""
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        response = await client.post(
+            f"{settings.TT_BASE_URL}{path}",
+            headers={**_tt_headers(api_key), "Content-Type": "application/json"},
+            json=payload,
+        )
+    if response.status_code not in (200, 201):
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"TicketTailor API error: {response.text}",
+        )
+    return response.json()
+
+
 async def _tt_put(api_key: str, path: str, payload: dict) -> Any:
     """Make authenticated PUT request to TicketTailor API."""
     async with httpx.AsyncClient(timeout=15.0) as client:
+        # TicketTailor v1 requires form-encoded data for PUT like POST
         response = await client.put(
             f"{settings.TT_BASE_URL}{path}",
             headers=_tt_headers(api_key),
-            json=payload,
+            data=payload,
         )
     if response.status_code != 200:
         raise HTTPException(
@@ -112,8 +129,6 @@ class EventCreate(BaseModel):
     venue_name: Optional[str] = ""
     postal_code: Optional[str] = ""
     country: Optional[str] = "US"
-    online_event: bool = False
-    private_event: bool = False
     groups: Optional[List['TicketGroupInCreate']] = []
     tickets: Optional[List['TicketTypeInCreate']] = []
 
@@ -133,6 +148,7 @@ class TicketTypeCreate(BaseModel):
     name: str
     price: float
     quantity: int
+    min_per_order: int = 1
     max_per_order: int = 10
     group_id: Optional[str] = None
 
@@ -146,8 +162,6 @@ class EventUpdate(BaseModel):
     venue_name: Optional[str] = None
     postal_code: Optional[str] = None
     country: Optional[str] = None
-    online_event: Optional[bool] = None
-    private_event: Optional[bool] = None
 
 
 # ─── Events ──────────────────────────────────────────────────────────────────
@@ -201,29 +215,29 @@ async def create_event(
 ):
     """Create a new event (Event Series + Occurrence) in TicketTailor."""
     client = _get_client_or_404(client_id, db)
-    
-    # 1. Create Event Series
+
+    # 1. Create Event Series (venue-based events only)
     series_payload = {
         "name": event.name,
         "description": event.description,
-        "online_event": "true" if event.online_event else "false",
-        "private": "true" if event.private_event else "false",
     }
-    if not event.online_event:
-        if event.venue_name: series_payload["venue"] = event.venue_name
-        if event.postal_code: series_payload["postal_code"] = event.postal_code
-        if event.country: series_payload["country"] = event.country
 
-        
+    # Include venue details for physical events
+    if event.venue_name: series_payload["venue"] = event.venue_name
+    if event.postal_code: series_payload["postal_code"] = event.postal_code
+    if event.country: series_payload["country"] = event.country
+
+    print(f"DEBUG CREATE: series_payload={series_payload}")
     series_data = await _tt_post(client.tt_api_key, "/event_series", series_payload)
+    print(f"DEBUG CREATE: series_data response={series_data}")
     series_id = series_data.get("id")
-    
+
     # 2. Create Event Occurrence
     occurrence_payload = {
         "start_date": event.start_date,
         "start_time": event.start_time,
         "end_date": event.end_date,
-        "end_time": event.end_time
+        "end_time": event.end_time,
     }
     occurrence_data = await _tt_post(client.tt_api_key, f"/event_series/{series_id}/events", occurrence_payload)
     occurrence_id = occurrence_data.get("id")
@@ -298,13 +312,9 @@ async def update_event(
     series_payload = {}
     if update.name is not None: series_payload["name"] = update.name
     if update.description is not None: series_payload["description"] = update.description
-    if update.online_event is not None: series_payload["online_event"] = "true" if update.online_event else "false"
-    if update.private_event is not None: series_payload["private"] = "true" if update.private_event else "false"
-    
-    if not update.online_event:
-        if update.venue_name is not None: series_payload["venue"] = update.venue_name
-        if update.postal_code is not None: series_payload["postal_code"] = update.postal_code
-        if update.country is not None: series_payload["country"] = update.country
+    if update.venue_name is not None: series_payload["venue"] = update.venue_name
+    if update.postal_code is not None: series_payload["postal_code"] = update.postal_code
+    if update.country is not None: series_payload["country"] = update.country
 
     
     if series_payload and series_id:
@@ -312,12 +322,19 @@ async def update_event(
         # Use POST for updates in TicketTailor API v1
         results["series"] = await _tt_post(client.tt_api_key, f"/event_series/{series_id}", series_payload)
         
-    # 3. Update Occurrence if status provided
-    if update.status is not None:
-        occurrence_payload = {"status": update.status}
-        print(f"DEBUG: Updating occurrence {event_id} with {occurrence_payload} via series {series_id}")
-        path = f"/event_series/{series_id}/events/{event_id}"
-        results["occurrence"] = await _tt_post(client.tt_api_key, path, occurrence_payload)
+    # 3. Update Series Status if provided and changed
+    current_status = event_data.get("status")
+    if update.status is not None and update.status != current_status:
+        tt_status = "close_sales" if update.status == "closed" else update.status
+        status_payload = {"status": tt_status}
+        print(f"DEBUG: Updating series status {series_id} from {current_status} to {tt_status}")
+        try:
+            path = f"/event_series/{series_id}/status"
+            results["status"] = await _tt_post(client.tt_api_key, path, status_payload)
+        except HTTPException as e:
+            # If status update fails (e.g. 400), don't break the whole update if other parts succeeded
+            print(f"DEBUG: Failed to update status: {e.detail}")
+            raise e
         
     return {"client_id": client_id, "data": results or event_data}
 
@@ -424,6 +441,7 @@ async def create_ticket_type(
         "name": tt.name,
         "price": int(tt.price * 100),
         "quantity": tt.quantity,
+        "min_per_order": tt.min_per_order,
         "max_per_order": tt.max_per_order,
         "event_ids": [event_id] # Restrict to this occurrence
     }
@@ -490,6 +508,8 @@ async def update_ticket_type(
         "name": tt.name,
         "price": int(tt.price * 100),
         "quantity": tt.quantity,
+        "min_per_order": tt.min_per_order,
+        "max_per_order": tt.max_per_order,
     }
     if tt.group_id:
         g_id = tt.group_id.replace("tg_", "")

@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
-import api from '../lib/api'
+import { paymentApi } from '../../api/payment'
+import { clientApi } from '../../api/client'
 import { DollarSign, CalendarDays, Search, CheckCircle, Clock, XCircle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
-import Skeleton from '../components/Skeleton'
-import ClientPillBar from '../components/ClientPillBar'
+import Skeleton from '../../components/ui/Skeleton'
+import ClientPillBar from '../../components/clients/ClientPillBar'
 
 export default function PaymentsPage() {
     const [payments, setPayments] = useState([])
@@ -33,7 +34,7 @@ export default function PaymentsPage() {
 
     const loadClients = () => {
         setLoadingClients(true)
-        api.get('/api/clients')
+        clientApi.getAll()
             .then(({ data }) => setClients(data.filter(c => c.is_active)))
             .finally(() => setLoadingClients(false))
     }
@@ -46,7 +47,7 @@ export default function PaymentsPage() {
         if (debouncedSearch) params.append('search', debouncedSearch)
         if (selectedClientId) params.append('client_id', selectedClientId)
 
-        api.get(`/api/dashboard/payments?${params.toString()}`)
+        paymentApi.getAll(params.toString())
             .then(({ data }) => {
                 setPayments(data.data || [])
                 setTotalRecords(data.total_records || 0)
